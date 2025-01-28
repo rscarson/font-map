@@ -1,0 +1,17 @@
+[package]
+name = "font_map"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["font-map-macros", "font-map-core"]
+
+[features]
+default = ["codegen", "extended-svg", "macros"]
+macros = ["font-map-macros"]
+codegen = ["font-map-core/codegen"]
+extended-svg = ["font-map-core/extended-svg", "font-map-macros/extended-svg"]
+
+[dependencies]
+font-map-macros = { path = "font-map-macros", optional = true }
+font-map-core = { path = "font-map-core" }

@@ -1,0 +1,19 @@
+[package]
+name = "font-map-core"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+codegen = ["proc-macro2", "syn", "quote"]
+extended-svg = ["base64", "flate2"]
+
+[dependencies]
+# Codegen dependencies
+proc-macro2 = { version = "1.0.93", optional = true }
+syn = { version = "2.0.96", optional = true }
+quote = { version = "1.0.38", optional = true }
+
+# Preview image-link generation
+base64 = { version = "0.22.1", optional = true }
+flate2 = { version = "1.0.35", features = ["zlib-ng"], default-features = false, optional = true }
