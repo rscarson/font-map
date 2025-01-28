@@ -1,0 +1,10 @@
+[package]
+name = "google_material_symbols"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+font-map = { path = "../" }
+
+[build-dependencies]
+font-map = { path = "../" }

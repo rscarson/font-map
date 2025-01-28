@@ -1,10 +1,10 @@
 [package]
-name = "font_map"
+name = "font-map"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["font-map-macros", "font-map-core"]
+members = ["font-map-macros", "font-map-core", "google_material_symbols"]
 
 [features]
 default = ["codegen", "extended-svg", "macros"]

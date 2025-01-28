@@ -59,6 +59,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "font-map"
+version = "0.1.0"
+dependencies = [
+ "font-map-core",
+ "font-map-macros",
+]
+
+[[package]]
 name = "font-map-core"
 version = "0.1.0"
 dependencies = [
@@ -78,11 +86,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "font_map"
+name = "google_material_symbols"
 version = "0.1.0"
 dependencies = [
- "font-map-core",
- "font-map-macros",
+ "font-map",
 ]
 
 [[package]]

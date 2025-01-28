@@ -49,5 +49,3 @@ pub use font_map_core::*;
 
 #[cfg(feature = "macros")]
 pub use font_map_macros::*;
-
-font!(Icon, "font.ttf");
