@@ -1,7 +1,7 @@
 #![allow(clippy::cast_possible_wrap)]
 use super::PlatformType;
-use crate::reader::{BinaryReader, Parse};
 use crate::error::ParseResult;
+use crate::reader::{BinaryReader, Parse};
 
 /// CMAP table data  
 /// Contains only the subset of the table needed for mapping unicode codepoints to glyph indices
@@ -70,6 +70,7 @@ impl Parse for CmapSubtable {
         reader.skip_u16()?; // language
 
         let mut subtable = Self::default();
+        debug_msg!("  CMAP format: {}", fmt);
 
         match fmt {
             0 => {
@@ -80,8 +81,6 @@ impl Parse for CmapSubtable {
                     subtable.mappings.insert(glyph_index, codepoint);
                 }
             }
-
-            2 => todo!("Format 2 CMAP tables not yet implemented"),
 
             4 => {
                 //
@@ -153,6 +152,7 @@ impl Parse for CmapSubtable {
             _ => todo!("Unsupported CMAP format: {}", fmt),
         }
 
+        debug_msg!("  Found {} mappings", subtable.mappings.len());
         Ok(subtable)
     }
 }

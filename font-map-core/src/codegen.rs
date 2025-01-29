@@ -32,6 +32,8 @@ impl FontCodegenExt for Font {
         let font_family = self.string(StringKind::FontFamily);
         let font_family: Vec<_> = font_family.iter().collect();
 
+        let codepoints_len = self.glyphs().len();
+
         quote! {
             #( #[doc = #comments] )*
             #[derive(Debug, Clone, Copy)]
@@ -46,6 +48,10 @@ impl FontCodegenExt for Font {
                     #[allow(dead_code)]
                     const FONT_FAMILY: &str = #font_family;
                 )*
+
+                /// The number of glyphs in the font
+                #[allow(dead_code)]
+                const GLYPHS: usize = #codepoints_len;
 
                 /// Returns the postscript name of the glyph
                 #[allow(clippy::too_many_lines)]

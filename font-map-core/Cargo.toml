@@ -13,8 +13,12 @@ categories.workspace = true
 default = []
 codegen = ["proc-macro2", "syn", "quote"]
 extended-svg = ["base64", "flate2"]
+debug-parser = []
 
 [dependencies]
+# String decode
+encoding_rs = "0.8.35"
+
 # Codegen dependencies
 proc-macro2 = { version = "1.0.93", optional = true }
 syn = { version = "2.0.96", optional = true }

@@ -18,11 +18,14 @@ macros = ["font-map-macros"]
 codegen = ["font-map-core/codegen"]
 extended-svg = ["font-map-core/extended-svg", "font-map-macros/extended-svg"]
 
+debug-parser = ["font-map-core/debug-parser"]
+
 [dependencies]
 font-map-macros = { workspace = true, optional = true }
 font-map-core = { workspace = true }
 
 [workspace.dependencies]
+font-map = { path = "." }
 font-map-core = { path = "font-map-core" }
 font-map-macros = { path = "font-map-macros" }
 

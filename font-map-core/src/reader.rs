@@ -131,7 +131,7 @@ impl<'a> BinaryReader<'a> {
     }
 
     pub fn skip_u64(&mut self) -> ParseResult<()> {
-        self.skip(4).map_err(|err| err.with_desc("u64"))
+        self.skip(8).map_err(|err| err.with_desc("u64"))
     }
 
     pub fn read_u8(&mut self) -> ParseResult<u8> {
@@ -213,6 +213,17 @@ mod test {
     }
 
     #[test]
+    fn test_read_i8() {
+        let data = [0x01, 0x02, 0x03];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_i8().unwrap(), 0x01);
+        assert_eq!(reader.read_i8().unwrap(), 0x02);
+        assert_eq!(reader.read_i8().unwrap(), 0x03);
+        assert!(reader.read_i8().is_err());
+    }
+
+    #[test]
     fn test_read_u16() {
         let data = [0x01, 0x02, 0x03, 0x04];
         let mut reader = BinaryReader::new(&data);
@@ -270,5 +281,53 @@ mod test {
         assert_eq!(reader.read_string(5).unwrap(), "Hello");
         assert_eq!(reader.read_string(7).unwrap(), ", World");
         assert!(reader.read_string(2).is_err());
+    }
+
+    #[test]
+    fn test_skip() {
+        let data = [0x01; 50];
+        let mut reader = BinaryReader::new(&data);
+
+        let pos = reader.pos();
+        reader.skip_u64().unwrap();
+        assert_eq!(reader.pos(), pos + u64::BITS as usize / 8);
+
+        let pos = reader.pos();
+        reader.skip_u32().unwrap();
+        assert_eq!(reader.pos(), pos + u32::BITS as usize / 8);
+
+        let pos = reader.pos();
+        reader.skip_u24().unwrap();
+        assert_eq!(reader.pos(), pos + 3);
+
+        let pos = reader.pos();
+        reader.skip_u16().unwrap();
+        assert_eq!(reader.pos(), pos + u16::BITS as usize / 8);
+
+        let pos = reader.pos();
+        reader.skip_u8().unwrap();
+        assert_eq!(reader.pos(), pos + u8::BITS as usize / 8);
+
+        assert!(reader.skip(50).is_err());
+    }
+
+    fn test_cursor() {
+        let data = [0x01; 50];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.pos(), 0);
+        assert_eq!(reader.len(), data.len());
+
+        reader.advance_to(10).unwrap();
+        assert_eq!(reader.pos(), 10);
+
+        reader.advance_by(10).unwrap();
+        assert_eq!(reader.pos(), 20);
+
+        reader.advance_by(-5).unwrap();
+        assert_eq!(reader.pos(), 15);
+
+        reader.advance_by(-200).unwrap_err();
+        reader.advance_to(50).unwrap_err();
     }
 }

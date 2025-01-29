@@ -10,12 +10,12 @@
 //!
 //! The base usecase for this crate is to create an enum of all the glyphs in a font file,  
 //! for use in fontend projects, where you want to refer to glyphs by name rather than by codepoint:
-//! ```ignore
+//! ```rust
 //! use font_map::font;
 //!
-//! font!(Icon, "path/to/font.ttf");
+//! font!(Icon, "google_material_symbols/font.ttf");
 //!
-//! const DELETE: Icon = Icon::DELETE;
+//! const DELETE: Icon = Icon::Delete;
 //! ```
 //!
 //! The generated code includes information for each glyph, such as:
@@ -27,20 +27,32 @@
 //! -----
 //!
 //! Another use is to use it for introspection of font files:
-//! ```ignore
-//! use font_map::Font;
+//! ```rust
+//! use font_map::font::Font;
 //!
-//! let font = Font::from_file("path/to/font.ttf")?;
+//! # use font_map::error::ParseError;
+//! # fn main() -> Result<(), ParseError> {
+//! let font = Font::from_file("google_material_symbols/font.ttf")?;
 //! if let Some(glyph) = font.glyph_named("delete") {
 //!     let codepoint = glyph.codepoint();
 //!     let svg = glyph.svg_outline();
 //! }
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Features
 //! - `macros` - Enables the `font!` macro for code generation
 //! - `codegen` - Enables the `FontCodegenExt` trait for runtime code generation
 //! - `extended-svg` - Enables compressed and base64 encoded SVG data in the generated code (Needed for image previews)
+//!
+//! ## Known Limitations
+//! This crate was made for a very specific use-case, and as such currently has a few limitations:
+//! - Only supports TTF fonts
+//! - And even then, only a subset of the spec, namely:
+//! - Only formats 0 and 4 of the `cmap` table
+//! - Only Unicode, or MS encoding 1 and 10, and `Macintosh::0` of the `name` table
+//! - Only formats 2.5 or below of the `post` table
 //!
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]

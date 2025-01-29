@@ -49,6 +49,12 @@ impl TrueTypeFont {
     }
 }
 
+fn parse_table<T: Parse>(reader: &mut BinaryReader, offset: u32, len: u32) -> ParseResult<T> {
+    let table = reader.read_from(offset as usize, len as usize)?;
+    let mut table_reader = BinaryReader::new(table);
+    T::parse(&mut table_reader)
+}
+
 impl Parse for TrueTypeFont {
     fn parse(reader: &mut BinaryReader) -> ParseResult<Self> {
         let mut cmap = None;
@@ -75,26 +81,19 @@ impl Parse for TrueTypeFont {
             let offset = reader.read_u32()?;
             let length = reader.read_u32()?;
 
+            debug_msg!("Found the {tag} table at {offset} with length {length}");
+
             match tag.as_str() {
                 "cmap" => {
-                    let table = reader.read_from(offset as usize, length as usize)?;
-                    let mut table_reader = BinaryReader::new(table);
-                    let table = CmapTable::parse(&mut table_reader)?;
-                    cmap = Some(table);
+                    cmap = Some(parse_table(reader, offset, length)?);
                 }
 
                 "post" => {
-                    let table = reader.read_from(offset as usize, length as usize)?;
-                    let mut table_reader = BinaryReader::new(table);
-                    let table = PostTable::parse(&mut table_reader)?;
-                    post = Some(table);
+                    post = Some(parse_table(reader, offset, length)?);
                 }
 
                 "name" => {
-                    let table = reader.read_from(offset as usize, length as usize)?;
-                    let mut table_reader = BinaryReader::new(table);
-                    let table = NameTable::parse(&mut table_reader)?;
-                    name = Some(table);
+                    name = Some(parse_table(reader, offset, length)?);
                 }
 
                 "glyf" => {
@@ -120,6 +119,7 @@ impl Parse for TrueTypeFont {
                     table_reader.skip_u16()?; // font_direction_hint
 
                     loca_is_long = table_reader.read_u16()? != 0;
+                    debug_msg!("  loca is long: {loca_is_long}");
                 }
 
                 "loca" => {
@@ -135,9 +135,13 @@ impl Parse for TrueTypeFont {
 
                         glyf_offsets.push(offset);
                     }
+
+                    debug_msg!("  Found {} glyf offsets", glyf_offsets.len());
                 }
 
-                _ => (),
+                _ => {
+                    debug_msg!("  Ignoring table")
+                }
             }
         }
 
@@ -164,6 +168,7 @@ impl Parse for TrueTypeFont {
                 let glyph = GlyfOutline::parse(&mut glyf_reader)?;
                 glyphs.push(glyph);
             } else {
+                debug_msg!("No outline for glyph_id {}", glyphs.len());
                 let glyph = GlyfOutline::default();
                 glyphs.push(glyph);
             }

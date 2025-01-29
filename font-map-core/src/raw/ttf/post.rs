@@ -38,6 +38,8 @@ impl Parse for PostTable {
         reader.skip_u32()?; // min memory t1
         reader.skip_u32()?; // max memory t1
 
+        debug_msg!("  Format = {}.{}", fmt.0, fmt.1);
+
         match fmt {
             (1, 0) => {
                 //
@@ -49,10 +51,11 @@ impl Parse for PostTable {
                 //
                 // Format 2.0 uses a 32-bit offset to the glyph name
                 let num_glyphs = reader.read_u16()?;
+                debug_msg!("  Num glyphs = {}", num_glyphs);
 
                 //
                 // Read the glyph names first
-                let mut names = Vec::with_capacity(num_glyphs as usize - POST_MAC_NAMES_LEN);
+                let mut names = Vec::with_capacity(num_glyphs as usize);
                 let mut name_reader = reader.clone();
                 name_reader.advance_by(num_glyphs as isize * 2)?;
                 while !name_reader.is_eof() {
@@ -92,6 +95,7 @@ impl Parse for PostTable {
             }
         }
 
+        debug_msg!("  Found {} glyph names", table.glyph_names.len());
         Ok(table)
     }
 }

@@ -3,8 +3,14 @@ name = "google_material_symbols"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["svg-preview"]
+svg-preview = ["font-map/extended-svg"]
+iced = ["dep:iced"]
+
 [dependencies]
-font-map = { path = "../" }
+font-map = { workspace = true, no-default-features = true }
+iced = { version = "0.13.1", optional = true }
 
 [build-dependencies]
-font-map = { path = "../" }
+font-map = { workspace = true, no-default-features = true }

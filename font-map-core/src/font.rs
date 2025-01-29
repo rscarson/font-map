@@ -18,6 +18,7 @@ use crate::{
 };
 
 /// A parsed font, with access to its glyphs and stored strings
+#[derive(Debug, Clone)]
 pub struct Font {
     glyphs: Vec<Glyph>,
     strings: HashMap<StringKind, String>,
@@ -114,6 +115,7 @@ impl From<TrueTypeFont> for Font {
 }
 
 /// A single glyph in a font
+#[derive(Debug, Clone)]
 pub struct Glyph {
     codepoint: u32,
     name: String,

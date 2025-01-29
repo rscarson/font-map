@@ -3,6 +3,14 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+/// Utility macro for printing debug messages if the `debug-parser` feature is enabled
+macro_rules! debug_msg {
+    ($($tokens:tt)*) => {
+        #[cfg(feature = "debug-parser")]
+        { eprintln!($($tokens)*) }
+    };
+}
+
 #[macro_use]
 mod reader;
 

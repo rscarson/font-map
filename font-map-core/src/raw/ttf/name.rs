@@ -45,12 +45,16 @@ impl Parse for NameTable {
             let length = reader.read_u16()?;
             let offset = reader.read_u16()?;
 
+            // Read the name
             let mut name_reader = reader.clone();
             name_reader.advance_to(string_offset as usize + offset as usize)?;
             let name = name_reader.read(length as usize)?;
-
-            // Decode
             let name = name.decode(platform_id, encoding_id);
+
+            debug_msg!(
+                "  Name record: {platform_id:?}::{encoding_id}::{language_id}::{name_id:?} = {name}"
+            );
+
             table.records.push(NameRecord {
                 platform_id,
                 encoding_id,
@@ -141,6 +145,8 @@ pub trait StringDecoderExt {
 impl StringDecoderExt for [u8] {
     fn decode(&self, platform_id: PlatformType, encoding_id: u16) -> String {
         match (platform_id, encoding_id) {
+            //
+            // These are UTF-16 encoded strings
             (PlatformType::Unicode, _) | (PlatformType::Microsoft, 1 | 10) => {
                 let words = self
                     .chunks_exact(2)
@@ -148,7 +154,12 @@ impl StringDecoderExt for [u8] {
                 String::from_utf16_lossy(&words.collect::<Vec<u16>>())
             }
 
-            _ => format!("Encoding type {platform_id:?}::{encoding_id} not supported"),
+            (PlatformType::Macintosh, 0) => {
+                let (s, _, _) = encoding_rs::MACINTOSH.decode(self);
+                s.to_string()
+            }
+
+            _ => format!("UNSUPPORTED_STRING::{platform_id:?}::{encoding_id}"),
         }
     }
 }
