@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
+readme = "readme.md"
 
 [workspace]
 members = ["font-map-macros", "font-map-core", "google_material_symbols"]
