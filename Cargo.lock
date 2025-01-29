@@ -1282,7 +1282,7 @@ dependencies = [
 
 [[package]]
 name = "google_material_symbols"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "font-map",
  "font-map-core",
