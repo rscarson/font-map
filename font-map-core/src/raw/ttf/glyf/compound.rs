@@ -1,7 +1,7 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
-use crate::reader::{BinaryReader, Parse};
 use crate::error::ParseResult;
+use crate::reader::{BinaryReader, Parse};
 
 use super::{
     simple::{Contour, Point},
