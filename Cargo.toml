@@ -37,5 +37,5 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/rscarson/font-map"
 
-keywords = ["font", "icon", "iced", "icons", "fonts"]
-categories = ["api_bindings", "text_processing", "parsing_tools", "gui"]
+keywords = ["font", "fonts", "text", "macros", "svg"]
+categories = ["api-bindings", "text-processing", "parsing-tools", "gui"]
