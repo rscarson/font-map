@@ -1,5 +1,6 @@
 [package]
 name = "google_material_symbols"
+description = "Google Material Design Icon Font"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
