@@ -35,7 +35,7 @@ impl Icon {
         Theme: iced::widget::text::Catalog,
     {
         iced::widget::Text::new(char::from(self))
-            .font(self.iced_font())
+            .font(Self::iced_font())
             .size(font_size)
     }
 }
