@@ -5,12 +5,12 @@ edition = "2021"
 
 [features]
 default = ["svg-preview"]
-svg-preview = ["font-map/extended-svg"]
+svg-preview = ["font-map-core/extended-svg"]
 iced = ["dep:iced"]
 
 [dependencies]
-font-map = { workspace = true, no-default-features = true }
+font-map = { workspace = true }
 iced = { version = "0.13.1", optional = true }
 
 [build-dependencies]
-font-map = { workspace = true, no-default-features = true }
+font-map-core = { workspace = true, features = ["codegen"] }

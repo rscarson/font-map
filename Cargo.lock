@@ -1285,6 +1285,7 @@ name = "google_material_symbols"
 version = "0.1.0"
 dependencies = [
  "font-map",
+ "font-map-core",
  "iced",
 ]
 

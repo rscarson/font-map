@@ -1,4 +1,4 @@
-use font_map::{font::Font, FontCodegenExt};
+use font_map_core::{font::Font, FontCodegenExt};
 
 const FONT_BYTES: &[u8] = include_bytes!("font.ttf");
 
