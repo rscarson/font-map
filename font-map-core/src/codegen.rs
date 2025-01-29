@@ -37,11 +37,13 @@ impl FontCodegenExt for Font {
         quote! {
             #( #[doc = #comments] )*
             #[derive(Debug, Clone, Copy)]
+            #[rustfmt::skip]
             #[repr(u32)]
             pub enum #identifier {
                 #( #variants )*
             }
 
+            #[rustfmt::skip]
             impl #identifier {
                 #(
                     /// The font family of the glyph
@@ -70,11 +72,13 @@ impl FontCodegenExt for Font {
                     std::char::from_u32(value as u32).unwrap_or(char::REPLACEMENT_CHARACTER)
                 }
             }
+
             impl From<&#identifier> for char {
                 fn from(value: &#identifier) -> Self {
                     (*value).into()
                 }
             }
+
             impl std::fmt::Display for #identifier {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                     write!(f, "{}", char::from(*self))

@@ -39,3 +39,7 @@ repository = "https://github.com/rscarson/font-map"
 
 keywords = ["font", "icon", "iced", "icons", "fonts"]
 categories = ["api_bindings", "text_processing", "parsing_tools", "gui"]
+
+
+[profile.release]
+debug = true

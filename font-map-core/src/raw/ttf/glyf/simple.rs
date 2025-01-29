@@ -26,7 +26,7 @@ impl Parse for SimpleGlyf {
 
     fn parse_with<'a>(&mut self, reader: &'a mut BinaryReader<'a>) -> ParseResult<()> {
         // Simple glyph
-        let mut end_pts_of_contours = Vec::new();
+        let mut end_pts_of_contours = Vec::with_capacity(self.num_contours as usize);
         let mut last_pt = 0;
 
         for _ in 0..self.num_contours {
@@ -41,7 +41,7 @@ impl Parse for SimpleGlyf {
 
         //
         // Parse instructions to get real point count
-        let mut flags = Vec::new();
+        let mut flags = Vec::with_capacity(num_points as usize);
         let mut i = 0;
         while i < num_points {
             let flag = reader.read_u8()?;
@@ -53,6 +53,7 @@ impl Parse for SimpleGlyf {
                 let repeat = reader.read_u8()?;
 
                 // Add the repeated flags
+                flags.reserve(usize::from(repeat));
                 for _ in 0..repeat {
                     flags.push(flag);
                 }
@@ -65,7 +66,7 @@ impl Parse for SimpleGlyf {
         //
         // Parse X coords into objective coords
         let mut last_x = 0;
-        let mut x_coordinates = Vec::new();
+        let mut x_coordinates = Vec::with_capacity(flags.len());
         for flag in &flags {
             if flag & X_SHORT != 0 {
                 let x = i16::from(reader.read_u8()?);
@@ -84,7 +85,7 @@ impl Parse for SimpleGlyf {
         //
         // Parse Y coords into objective coords
         let mut last_y = 0;
-        let mut y_coordinates = Vec::new();
+        let mut y_coordinates = Vec::with_capacity(flags.len());
         for flag in &flags {
             if flag & Y_SHORT != 0 {
                 let y = i16::from(reader.read_u8()?);
@@ -103,9 +104,8 @@ impl Parse for SimpleGlyf {
 
         //
         // Create points
-        let mut points = Vec::new();
-        for i in 0..num_points {
-            let i = i as usize;
+        let mut points = Vec::with_capacity(flags.len());
+        for i in 0..flags.len() {
             let x = x_coordinates[i];
             let y = y_coordinates[i];
             let on_curve = flags[i] & ON_CURVE != 0;
