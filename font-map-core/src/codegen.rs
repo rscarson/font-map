@@ -46,12 +46,12 @@ impl FontCodegenExt for Font {
                 #(
                     /// The font family of the glyph
                     #[allow(dead_code)]
-                    const FONT_FAMILY: &str = #font_family;
+                    pub const FONT_FAMILY: &str = #font_family;
                 )*
 
                 /// The number of glyphs in the font
                 #[allow(dead_code)]
-                const GLYPHS: usize = #codepoints_len;
+                pub const GLYPHS: usize = #codepoints_len;
 
                 /// Returns the postscript name of the glyph
                 #[allow(clippy::too_many_lines)]
