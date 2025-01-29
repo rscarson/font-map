@@ -1,7 +1,13 @@
 [package]
 name = "font-map"
-version = "0.1.0"
-edition = "2021"
+description = "Macros and utilities for parsing font files"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [workspace]
 members = ["font-map-macros", "font-map-core", "google_material_symbols"]
@@ -13,5 +19,19 @@ codegen = ["font-map-core/codegen"]
 extended-svg = ["font-map-core/extended-svg", "font-map-macros/extended-svg"]
 
 [dependencies]
-font-map-macros = { path = "font-map-macros", optional = true }
+font-map-macros = { workspace = true, optional = true }
+font-map-core = { workspace = true }
+
+[workspace.dependencies]
 font-map-core = { path = "font-map-core" }
+font-map-macros = { path = "font-map-macros" }
+
+[workspace.package]
+version = "0.1.0"
+authors = ["@rscarson"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/rscarson/font-map"
+
+keywords = ["font", "icon", "iced", "icons", "fonts"]
+categories = ["api_bindings", "text_processing", "parsing_tools", "gui"]

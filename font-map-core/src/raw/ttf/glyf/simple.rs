@@ -1,5 +1,6 @@
 #![allow(clippy::cast_possible_truncation)]
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::reader::{BinaryReader, Parse};
+use crate::error::ParseResult;
 
 /// The outline features of a simple-type glyph
 #[derive(Debug, Clone)]

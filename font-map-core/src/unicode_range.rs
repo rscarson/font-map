@@ -2,29 +2,25 @@ use std::ops::Range;
 
 /// Map a unicode codepoint to a named range
 pub fn unicode_range(codepoint: u32) -> &'static str {
-    // binary search
-    let mut low = 0;
-    let mut high = ALL_UNICODE_SETS.len() - 1;
-
-    while low <= high {
-        let mid = (low + high) / 2;
-        let (name, range) = &ALL_UNICODE_SETS[mid];
-
+    let index = ALL_UNICODE_SETS.binary_search_by(|(_, range)| {
         if codepoint < range.start {
-            high = mid - 1;
-        } else if codepoint >= range.end {
-            low = mid + 1;
+            std::cmp::Ordering::Greater
+        } else if codepoint > range.end {
+            std::cmp::Ordering::Less
         } else {
-            return name;
+            std::cmp::Ordering::Equal
         }
-    }
+    });
 
-    "Unknown"
+    match index {
+        Ok(index) => ALL_UNICODE_SETS[index].0,
+        Err(_) => "Unknown",
+    }
 }
 
 const ALL_UNICODE_SETS: &[(&str, Range<u32>)] = &[
     ("Control Character", 0..32),
-    ("Basic Latin", 0..128),
+    ("Basic Latin", 32..128),
     ("Latin-1 Supplement", 128..256),
     ("Latin Extended-A", 256..384),
     ("Latin Extended-B", 384..592),
@@ -356,3 +352,22 @@ const ALL_UNICODE_SETS: &[(&str, Range<u32>)] = &[
     ("Supplementary Private Use Area-A", 983_040..1_048_576),
     ("Supplementary Private Use Area-B", 1_048_576..1_114_112),
 ];
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_unicode_range() {
+        assert_eq!(unicode_range(0), "Control Character");
+        assert_eq!(unicode_range(32), "Basic Latin");
+        assert_eq!(unicode_range(127), "Basic Latin");
+        assert_eq!(unicode_range(128), "Latin-1 Supplement");
+        assert_eq!(unicode_range(255), "Latin-1 Supplement");
+
+        assert_eq!(unicode_range(0x1F600), "Emoticons (Emoji)");
+        assert_eq!(unicode_range(0xFFFF), "Specials");
+
+        assert_eq!(unicode_range(0xFFFF_FFFF), "Unknown");
+    }
+}

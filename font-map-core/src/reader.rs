@@ -1,5 +1,6 @@
 #![allow(clippy::cast_possible_wrap)]
 #![allow(dead_code)]
+use crate::error::{ParseError, ParseResult};
 
 macro_rules! read_type {
     ($reader:expr, $kind:ty) => {
@@ -196,70 +197,78 @@ pub trait Parse: Sized {
     }
 }
 
-pub type ParseResult<T> = Result<T, ParseError>;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-#[derive(Debug)]
-pub enum ParseError {
-    UnexpectedEof {
-        pos: usize,
-        size: usize,
-        desc: Option<&'static str>,
-    },
-    InvalidValue {
-        pos: usize,
-        value: u32,
-        name: &'static str,
-    },
-    Parse {
-        pos: usize,
-        message: String,
-    },
-    Io(std::io::Error),
-}
-impl ParseError {
-    pub fn with_desc(self, desc: &'static str) -> ParseError {
-        match self {
-            ParseError::UnexpectedEof { pos, size, .. } => ParseError::UnexpectedEof {
-                pos,
-                size,
-                desc: Some(desc),
-            },
-            other => other,
-        }
-    }
-}
-impl std::error::Error for ParseError {}
-impl std::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            ParseError::UnexpectedEof {
-                pos,
-                size,
-                desc: Some(desc),
-            } => {
-                write!(
-                    f,
-                    "Unexpected EOF trying to read {size} bytes from {pos} while parsing {desc}"
-                )
-            }
-            ParseError::UnexpectedEof { pos, size, .. } => {
-                write!(f, "Unexpected EOF trying to read {size} bytes from {pos}")
-            }
-            ParseError::InvalidValue { pos, value, name } => {
-                write!(f, "Invalid value {value:#0x} at {pos} while parsing {name}")
-            }
-            ParseError::Parse { pos, message } => {
-                write!(f, "Error at {pos}: {message}")
-            }
-            ParseError::Io(err) => {
-                write!(f, "IO Error: {err:#}")
-            }
-        }
-    }
-}
+    #[test]
+    fn test_read_u8() {
+        let data = [0x01, 0x02, 0x03];
+        let mut reader = BinaryReader::new(&data);
 
-impl From<std::io::Error> for ParseError {
-    fn from(err: std::io::Error) -> ParseError {
-        ParseError::Io(err)
+        assert_eq!(reader.read_u8().unwrap(), 0x01);
+        assert_eq!(reader.read_u8().unwrap(), 0x02);
+        assert_eq!(reader.read_u8().unwrap(), 0x03);
+        assert!(reader.read_u8().is_err());
+    }
+
+    #[test]
+    fn test_read_u16() {
+        let data = [0x01, 0x02, 0x03, 0x04];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_u16().unwrap(), 0x0102);
+        assert_eq!(reader.read_u16().unwrap(), 0x0304);
+        assert!(reader.read_u16().is_err());
+    }
+
+    #[test]
+    fn test_read_u24() {
+        let data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_u24().unwrap(), 0x01_02_03);
+        assert_eq!(reader.read_u24().unwrap(), 0x04_05_06);
+        assert!(reader.read_u24().is_err());
+    }
+
+    #[test]
+    fn test_read_u32() {
+        let data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_u32().unwrap(), 0x01_02_03_04);
+        assert!(reader.read_u32().is_err());
+    }
+
+    #[test]
+    fn test_read_fixed32() {
+        let data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_fixed32().unwrap(), (0x0102, 0x0304));
+        assert!(reader.read_fixed32().is_err());
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn test_read_f2dot14() {
+        let data = [0x40, 0x00, 0x00, 0x00, 0x10, 0x00];
+        let mut reader = BinaryReader::new(&data);
+
+        assert_eq!(reader.read_f2dot14().unwrap(), 1.0);
+        assert_eq!(reader.read_f2dot14().unwrap(), 0.0);
+        assert_eq!(reader.read_f2dot14().unwrap(), 1.0 / 4.0);
+        assert!(reader.read_f2dot14().is_err());
+    }
+
+    #[test]
+    fn test_read_string() {
+        let data = b"Hello, World!";
+        let mut reader = BinaryReader::new(data);
+
+        assert_eq!(reader.read_string(5).unwrap(), "Hello");
+        assert_eq!(reader.read_string(7).unwrap(), ", World");
+        assert!(reader.read_string(2).is_err());
     }
 }

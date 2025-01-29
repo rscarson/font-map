@@ -18,10 +18,10 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Run all-feature tests
-      run: cargo test --lib --all-features
+      run: cargo test --lib --all-features --workspace
 
     - name: Run no-features tests
-      run: cargo test --lib --no-default-features
+      run: cargo test --lib --no-default-features --workspace
 
     # Check if the README is up to date
     # We will do this before all the time-consuming tests
@@ -32,7 +32,7 @@ jobs:
 
     # Check formatting
     - name: Run fmt
-      run: cargo fmt --check
+      run: cargo fmt --check --workspace
     
     # Lint all the things
     - name: Run clippy

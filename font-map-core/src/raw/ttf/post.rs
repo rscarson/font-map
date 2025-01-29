@@ -1,6 +1,7 @@
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::cast_possible_truncation)]
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::error::ParseResult;
+use crate::reader::{BinaryReader, Parse};
 
 /// The Post table of a TrueType font  
 /// Contains only the subset of the table needed for mapping glyph indices to glyph names

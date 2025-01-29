@@ -1,6 +1,7 @@
 #![allow(clippy::cast_possible_wrap)]
 use super::PlatformType;
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::reader::{BinaryReader, Parse};
+use crate::error::ParseResult;
 
 /// CMAP table data  
 /// Contains only the subset of the table needed for mapping unicode codepoints to glyph indices

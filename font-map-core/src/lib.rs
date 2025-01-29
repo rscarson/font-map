@@ -9,13 +9,13 @@ mod reader;
 #[cfg(feature = "codegen")]
 mod codegen;
 
-mod font;
 mod unicode_range;
+
+pub mod error;
+pub mod font;
 
 #[cfg(feature = "codegen")]
 pub use codegen::FontCodegenExt;
-
-pub use font::*;
 
 /// This module contains the raw data structures from parsing font files
 pub mod raw {

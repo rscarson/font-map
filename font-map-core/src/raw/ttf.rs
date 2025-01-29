@@ -2,7 +2,8 @@
 //!
 //! The parser is designed to be fast, and minimal. Supporting only a subset of the TTF spec
 //!
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::error::ParseResult;
+use crate::reader::{BinaryReader, Parse};
 
 mod post;
 pub use post::PostTable;

@@ -1,11 +1,20 @@
+//! This module contains the font enumeration and glyph data structures
+//!
+//! The `Font` struct contains all the glyphs in a font, along with any stored strings
+//!
+//! The `Glyph` struct contains information about a single glyph in a font:
+//! - Unicode codepoint
+//! - Postscript name
+//! - Outline data
+//!
 #![allow(clippy::match_on_vec_items)]
 #![allow(clippy::cast_possible_truncation)]
 use std::collections::HashMap;
 
 pub use crate::raw::ttf::NameKind as StringKind;
 use crate::{
+    error::ParseResult,
     raw::ttf::{GlyfOutline, SimpleGlyf, TrueTypeFont},
-    reader::ParseResult,
 };
 
 /// A parsed font, with access to its glyphs and stored strings

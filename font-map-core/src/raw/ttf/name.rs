@@ -1,4 +1,5 @@
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::error::ParseResult;
+use crate::reader::{BinaryReader, Parse};
 
 use super::PlatformType;
 

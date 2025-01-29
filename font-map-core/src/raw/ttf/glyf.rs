@@ -1,5 +1,6 @@
 #![allow(clippy::cast_sign_loss)]
-use crate::reader::{BinaryReader, Parse, ParseResult};
+use crate::reader::{BinaryReader, Parse};
+use crate::error::ParseResult;
 
 mod simple;
 pub use simple::SimpleGlyf;

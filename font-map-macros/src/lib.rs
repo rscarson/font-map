@@ -1,4 +1,4 @@
-use font_map_core::{Font, FontCodegenExt};
+use font_map_core::{font::Font, FontCodegenExt};
 use proc_macro::TokenStream;
 use syn::{parse::Parse, parse_macro_input, Ident, LitStr};
 
