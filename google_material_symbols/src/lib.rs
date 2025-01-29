@@ -17,6 +17,10 @@ pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
 
 /// Load the Google Material Icons font, returning a `font_map::Font` instance
 pub fn load_font() -> font_map::font::Font {
+    Icon::Delete;
+    Icon::Analytics;
+    Icon::Neurology;
+    Icon::Insights;
     font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
 }
 

@@ -1011,7 +1011,7 @@ dependencies = [
 
 [[package]]
 name = "font-map"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "font-map-core",
  "font-map-macros",
@@ -1019,7 +1019,7 @@ dependencies = [
 
 [[package]]
 name = "font-map-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "encoding_rs",
@@ -1031,7 +1031,7 @@ dependencies = [
 
 [[package]]
 name = "font-map-macros"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "font-map-core",
  "syn 2.0.96",

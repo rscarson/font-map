@@ -26,12 +26,12 @@ font-map-macros = { workspace = true, optional = true }
 font-map-core = { workspace = true }
 
 [workspace.dependencies]
-font-map = { path = ".", version = "0.1.0" }
-font-map-core = { path = "core", version = "0.1.0" }
-font-map-macros = { path = "macros", version = "0.1.0" }
+font-map = { path = ".", version = "0.1.1" }
+font-map-core = { path = "core", version = "0.1.1" }
+font-map-macros = { path = "macros", version = "0.1.1" }
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 authors = ["@rscarson"]
 edition = "2021"
 license = "MIT"

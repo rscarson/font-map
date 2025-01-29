@@ -133,19 +133,19 @@ impl SimpleGlyf {
     pub fn as_svg(&self) -> String {
         let mut shape = String::new();
 
-        // Draw all the contours
-        for contour in &self.contours {
-            shape.push_str(&contour.as_svg());
-        }
-
         // Wrap in SVG container, using x/y min/max as viewBox
         let (xmin, xmax) = (self.x.0, self.x.1);
         let (ymin, ymax) = (-self.y.1, -self.y.0);
         let width = xmax - xmin;
         let height = ymax - ymin;
 
+        // Draw all the contours
+        for contour in &self.contours {
+            shape.push_str(&contour.as_svg());
+        }
+
         // Add a margin, preserving aspect ratio
-        let x_margin = 10;
+        let x_margin = 50;
         let aspect_ratio = f32::from(width) / f32::from(height);
         let y_margin = (f32::from(x_margin) / aspect_ratio) as i16;
         let (xmin, xmax) = (xmin - x_margin, xmax + x_margin);
@@ -153,13 +153,13 @@ impl SimpleGlyf {
         let (width, height) = (xmax - xmin, ymax - ymin);
 
         // Calculate a new set of sizes for the final display
-        let width2 = 50i16;
+        let width2 = 75i16;
         let height2 = (f32::from(width2) / aspect_ratio) as i16;
 
         [
             r#"<?xml version="1.0" encoding="UTF-8"?>"#.to_string(),
             format!(
-                "<svg xmlns='http://www.w3.org/2000/svg' width='{width2}' height='{height2}' viewBox='{xmin} {ymin} {width} {height}'>{shape}</svg>"
+                "<svg xmlns='http://www.w3.org/2000/svg' style='background-color:white' width='{width2}' height='{height2}' viewBox='{xmin} {ymin} {width} {height}'>{shape}</svg>"
             ),
         ].join("")
     }
@@ -190,7 +190,7 @@ impl Contour {
         // Close the path
         path.push('Z');
 
-        format!("<path d='{path}' fill='none' stroke='red' stroke-width='5' />")
+        format!("<path d='{path}' fill='none' stroke='black' stroke-width='10' />")
     }
 }
 
