@@ -17,7 +17,7 @@ pub struct BinaryReader<'a> {
     data: &'a [u8],
     pos: usize,
 }
-impl<'a> BinaryReader<'a> {
+impl BinaryReader<'_> {
     pub fn new(data: &[u8]) -> BinaryReader {
         BinaryReader { data, pos: 0 }
     }

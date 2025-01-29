@@ -140,7 +140,7 @@ impl Parse for TrueTypeFont {
                 }
 
                 _ => {
-                    debug_msg!("  Ignoring table")
+                    debug_msg!("  Ignoring table");
                 }
             }
         }

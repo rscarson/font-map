@@ -27,6 +27,3 @@ quote = { version = "1.0.38", optional = true }
 # Preview image-link generation
 base64 = { version = "0.22.1", optional = true }
 flate2 = { version = "1.0.35", features = ["zlib-ng"], default-features = false, optional = true }
-
-[profile.release]
-debug = true
