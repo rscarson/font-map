@@ -1,6 +1,10 @@
 //! A library for working with the Google Material Icons font
 //!
 //! Provides access to the Sharp/Regular Google Material Icons font, as well as a code-generated enum of all the glyphs in the font.
+//!
+//! **I am not affiliated with Google Inc., nor do I have any rights to the Google Material Symbols font.**  
+//! This crate is published with a copy of the font, and its license, as allowed by the license.
+//!
 
 /// Re-export the `font_map` crate, which provides a simple API for analyzing font files
 pub use font_map;

@@ -8,6 +8,9 @@
 This crate provides an enum of all the glyphs in the Google Material Symbols font.  
 Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 
+**I am not affiliated with Google Inc., nor do I have any rights to the Google Material Symbols font.**  
+This crate is published with a copy of the font, and its license, as allowed by the license.
+
 ```rust
 use google_material_symbols::{Icon, load_font};
 

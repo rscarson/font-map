@@ -26,9 +26,9 @@ font-map-macros = { workspace = true, optional = true }
 font-map-core = { workspace = true }
 
 [workspace.dependencies]
-font-map = { path = "." }
-font-map-core = { path = "font-map-core" }
-font-map-macros = { path = "font-map-macros" }
+font-map = { path = ".", version = "0.1.0" }
+font-map-core = { path = "font-map-core", version = "0.1.0" }
+font-map-macros = { path = "font-map-macros", version = "0.1.0" }
 
 [workspace.package]
 version = "0.1.0"
