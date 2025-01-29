@@ -38,4 +38,4 @@ license = "MIT"
 repository = "https://github.com/rscarson/font-map"
 
 keywords = ["font", "fonts", "text", "macros", "svg"]
-categories = ["api-bindings", "text-processing", "parsing-tools", "gui"]
+categories = ["api-bindings", "text-processing", "encoding", "gui"]
