@@ -24,7 +24,7 @@ jobs:
       run: cargo test --lib --no-default-features --workspace
 
     - name: Run fmt
-      run: cargo fmt --check --workspace
+      run: cargo fmt --check
     
     - name: Run clippy
       run: cargo clippy --all-features
