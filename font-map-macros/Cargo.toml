@@ -17,5 +17,5 @@ default = ["extended-svg"]
 extended-svg = ["font-map-core/extended-svg"]
 
 [dependencies]
-syn = "2.0.96"
+syn = "2.0"
 font-map-core = { workspace = true, features = ["codegen"] }
