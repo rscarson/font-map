@@ -23,17 +23,13 @@ jobs:
     - name: Run no-features tests
       run: cargo test --lib --no-default-features --workspace
 
-    # Check if the README is up to date
-    # We will do this before all the time-consuming tests
+    - name: Run fmt
+      run: cargo fmt --check --workspace
+    
+    - name: Run clippy
+      run: cargo clippy --all-features
+      
     - name: Check if the README is up to date.
       run: |
         cargo install cargo-rdme
         cargo rdme --check
-
-    # Check formatting
-    - name: Run fmt
-      run: cargo fmt --check --workspace
-    
-    # Lint all the things
-    - name: Run clippy
-      run: cargo clippy --all-features
