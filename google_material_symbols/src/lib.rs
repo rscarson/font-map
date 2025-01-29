@@ -19,7 +19,7 @@ pub fn load_font() -> font_map::font::Font {
 #[cfg(feature = "iced")]
 impl Icon {
     /// Returns a font definition for this font
-    fn iced_font() -> iced::Font {
+    pub fn iced_font() -> iced::Font {
         iced::font::Font {
             family: iced::font::Family::Name(Icon::FONT_FAMILY),
             ..Default::default()
@@ -27,7 +27,7 @@ impl Icon {
     }
 
     /// Converts this enum into an iced Text widget
-    fn into_text<'a, Theme>(
+    pub fn into_text<'a, Theme>(
         self,
         font_size: impl Into<iced::Pixels>,
     ) -> iced::widget::Text<'a, Theme>
