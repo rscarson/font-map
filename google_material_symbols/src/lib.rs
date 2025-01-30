@@ -9,8 +9,9 @@
 /// Re-export the `font_map` crate, which provides a simple API for analyzing font files
 pub use font_map;
 
-mod font_generated;
-pub use font_generated::Icon;
+//
+// Generated font bindings
+include!(env!("FONT_ENUM"));
 
 /// The contents of the Google Material Icons font file
 pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
