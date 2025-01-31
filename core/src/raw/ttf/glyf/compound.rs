@@ -164,7 +164,7 @@ impl Component {
             for contour in parent {
                 for point in &contour.points {
                     if index == 0 {
-                        point1 = point.clone();
+                        point1 = *point;
                         break;
                     }
                     index -= 1;
@@ -176,7 +176,7 @@ impl Component {
             for contour in child {
                 for point in &contour.points {
                     if index == 0 {
-                        point2 = point.clone();
+                        point2 = *point;
                         break;
                     }
                     index -= 1;

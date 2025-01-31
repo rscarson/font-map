@@ -56,8 +56,9 @@
 //!
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
-
+#[cfg_attr(docsrs, feature(doc_cfg))]
 pub use font_map_core::*;
 
 #[cfg(feature = "macros")]
+#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 pub use font_map_macros::*;

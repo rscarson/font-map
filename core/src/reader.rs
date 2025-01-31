@@ -189,9 +189,9 @@ pub trait Parse: Sized {
         Self::parse(&mut reader)
     }
 
-    fn parse<'a>(reader: &'a mut BinaryReader<'a>) -> ParseResult<Self>;
+    fn parse(reader: &mut BinaryReader) -> ParseResult<Self>;
 
-    fn parse_with<'a>(&mut self, reader: &'a mut BinaryReader<'a>) -> ParseResult<()> {
+    fn parse_with(&mut self, reader: &mut BinaryReader) -> ParseResult<()> {
         *self = Self::parse(reader)?;
         Ok(())
     }

@@ -1,3 +1,5 @@
+<!-- cargo-rdme start -->
+
 # Google Material Symbols Font
 
 [![Crates.io](https://img.shields.io/crates/v/google_material_symbols.svg)](https://crates.io/crates/google_material_symbols/)
@@ -10,6 +12,8 @@ Additionally, it provides a way to load the font, and QOL features for using the
 
 **I am not affiliated with Google Inc., nor do I have any rights to the Google Material Symbols font.**  
 This crate is published with a copy of the font, and its license, as allowed by the license.
+
+See [`Icon`] for the list of available icons, including their names, codepoints and a preview image.
 
 ```rust
 use google_material_symbols::{Icon, load_font};
@@ -34,3 +38,5 @@ let text_widget = Icon::Delete.into_text(24); // A text widget with the icon, in
 let widget: iced::Element<_> = Icon::Delete.into(); // A text widget with the icon, in the default font size
 
 ```
+
+<!-- cargo-rdme end -->

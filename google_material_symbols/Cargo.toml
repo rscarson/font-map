@@ -11,7 +11,7 @@ categories.workspace = true
 readme = "readme.md"
 
 [features]
-default = ["svg-preview"]
+default = ["iced"]
 svg-preview = ["font-map-core/extended-svg"]
 iced = ["dep:iced"]
 

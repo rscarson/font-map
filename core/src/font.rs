@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub use crate::raw::ttf::NameKind as StringKind;
 use crate::{
     error::ParseResult,
-    raw::ttf::{GlyfOutline, SimpleGlyf, TrueTypeFont},
+    raw::ttf::{GlyfOutline, SimpleGlyf, SvgExt, TrueTypeFont},
 };
 
 /// A parsed font, with access to its glyphs and stored strings
@@ -150,7 +150,7 @@ impl Glyph {
     /// Returns the SVG data of this glyph's outline
     #[must_use]
     pub fn svg_outline(&self) -> String {
-        self.outline.as_svg()
+        self.outline.to_svg()
     }
 
     /// Returns the gzip compressed SVGZ data of this glyph
@@ -158,17 +158,9 @@ impl Glyph {
     /// # Errors
     /// Returns an error if the data cannot be compressed
     #[cfg(feature = "extended-svg")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "extended-svg")))]
     pub fn svgz_outline(&self) -> std::io::Result<Vec<u8>> {
-        use flate2::write::GzEncoder;
-        use std::io::Write;
-
-        let mut buffer = Vec::new();
-        let outline = self.svg_outline();
-        let mut encoder = GzEncoder::new(&mut buffer, flate2::Compression::best());
-        encoder.write_all(outline.as_bytes())?;
-        encoder.finish()?;
-
-        Ok(buffer)
+        self.outline.to_svgz()
     }
 
     /// Generates a `data:` link containing the outline svg data for this glyph  
@@ -177,26 +169,8 @@ impl Glyph {
     /// # Errors
     /// Returns an error if the data cannot be encoded properly, or compressed if `should_compress` is true
     #[cfg(feature = "extended-svg")]
-    pub fn datalink_outline(&self, should_compress: bool) -> std::io::Result<String> {
-        use base64::{engine::general_purpose::STANDARD, write::EncoderStringWriter};
-        use std::io::Write;
-
-        let buffer = if should_compress {
-            self.svgz_outline()?
-        } else {
-            self.svg_outline().into_bytes()
-        };
-
-        let mut encoder = EncoderStringWriter::new(&STANDARD);
-        encoder.write_all(&buffer)?;
-
-        let svgz = encoder.into_inner();
-        let url = format!(
-            "data:image/svg+xml;{}base64,{}",
-            if should_compress { "gzip;" } else { "" },
-            svgz
-        );
-
-        Ok(url)
+    #[cfg_attr(docsrs, doc(cfg(feature = "extended-svg")))]
+    pub fn svg_dataimage_url(&self) -> std::io::Result<String> {
+        self.outline.to_svg_dataimage_url()
     }
 }

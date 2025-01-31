@@ -137,7 +137,7 @@ impl FontCodegenExt for Font {
         let extended_svg = quote! {};
         #[cfg(feature = "extended-svg")]
         let extended_svg = {
-            if let Ok(url) = glyph.datalink_outline(false) {
+            if let Ok(url) = glyph.svg_dataimage_url() {
                 let link = format!("![Preview Glyph]({url})");
                 quote! {
                     #[doc = ""]

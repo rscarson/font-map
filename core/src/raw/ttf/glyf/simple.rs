@@ -20,11 +20,11 @@ pub struct SimpleGlyf {
 }
 
 impl Parse for SimpleGlyf {
-    fn parse<'a>(_: &'a mut BinaryReader<'a>) -> ParseResult<Self> {
+    fn parse(_: &mut BinaryReader) -> ParseResult<Self> {
         unimplemented!("Use parse_with instead")
     }
 
-    fn parse_with<'a>(&mut self, reader: &'a mut BinaryReader<'a>) -> ParseResult<()> {
+    fn parse_with(&mut self, reader: &mut BinaryReader) -> ParseResult<()> {
         // Simple glyph
         let mut end_pts_of_contours = Vec::with_capacity(self.num_contours as usize);
         let mut last_pt = 0;
@@ -38,67 +38,63 @@ impl Parse for SimpleGlyf {
         let _instructions = reader.read(instruction_length as usize)?;
 
         let num_points = last_pt + 1;
+        debug_msg!("  Num_points: {}", num_points);
 
         //
         // Parse instructions to get real point count
         let mut flags = Vec::with_capacity(num_points as usize);
-        let mut i = 0;
-        while i < num_points {
+        let mut remaining_pts = num_points;
+        while remaining_pts > 0 {
             let flag = reader.read_u8()?;
+            let mut flag = Flag::from_byte(flag);
+            remaining_pts -= 1;
+
+            // Repeat the flag
+            if flag.repeats != 0 {
+                let n_times = reader.read_u8()?;
+                debug_msg!("  Repeats: {n_times}");
+                flag.repeats = n_times;
+                remaining_pts -= u16::from(n_times);
+            }
+
             flags.push(flag);
-            i += 1;
-
-            if flag & REPEAT != 0 {
-                // Repeat bit is set, read the repeat count
-                let repeat = reader.read_u8()?;
-
-                // Add the repeated flags
-                flags.reserve(usize::from(repeat));
-                for _ in 0..repeat {
-                    flags.push(flag);
-                }
-
-                // Increment `i` for the repeated flags
-                i += u16::from(repeat);
+            flags.reserve(usize::from(flag.repeats));
+            for _ in 0..flag.repeats {
+                flags.push(flag);
             }
         }
 
         //
         // Parse X coords into objective coords
-        let mut last_x = 0;
         let mut x_coordinates = Vec::with_capacity(flags.len());
+        let mut last_x = 0;
         for flag in &flags {
-            if flag & X_SHORT != 0 {
-                let x = i16::from(reader.read_u8()?);
-                let is_neg = flag & X_SAME == 0;
-                last_x += if is_neg { -x } else { x };
-            } else if flag & X_SAME != 0 {
-                // Use previous x
-            } else {
-                let delta = reader.read_i16()?;
-                last_x += delta;
+            let delta = match flag.x_kind {
+                FlagCoordKind::NegShort => -i16::from(reader.read_u8()?),
+                FlagCoordKind::PosShort => i16::from(reader.read_u8()?),
+                FlagCoordKind::Long => reader.read_i16()?,
+                FlagCoordKind::Same => 0,
             };
 
+            last_x += delta;
+            debug_msg!("  X: {delta}");
             x_coordinates.push(last_x);
         }
 
         //
         // Parse Y coords into objective coords
-        let mut last_y = 0;
         let mut y_coordinates = Vec::with_capacity(flags.len());
+        let mut last_y = 0;
         for flag in &flags {
-            if flag & Y_SHORT != 0 {
-                let y = i16::from(reader.read_u8()?);
-                let is_neg = flag & Y_SAME == 0;
-
-                last_y += if is_neg { -y } else { y };
-            } else if flag & Y_SAME != 0 {
-                // Use previous y
-            } else {
-                let delta = reader.read_i16()?;
-                last_y += delta;
+            let delta = match flag.y_kind {
+                FlagCoordKind::NegShort => -i16::from(reader.read_u8()?),
+                FlagCoordKind::PosShort => i16::from(reader.read_u8()?),
+                FlagCoordKind::Long => reader.read_i16()?,
+                FlagCoordKind::Same => 0,
             };
 
+            last_y += delta;
+            debug_msg!("  Y: {delta}");
             y_coordinates.push(last_y);
         }
 
@@ -108,7 +104,7 @@ impl Parse for SimpleGlyf {
         for i in 0..flags.len() {
             let x = x_coordinates[i];
             let y = y_coordinates[i];
-            let on_curve = flags[i] & ON_CURVE != 0;
+            let on_curve = flags[i].on_curve;
             points.push(Point { x, y, on_curve });
         }
 
@@ -127,83 +123,69 @@ impl Parse for SimpleGlyf {
     }
 }
 
-impl SimpleGlyf {
-    /// Generate an SVG string representation of the glyph
-    #[must_use]
-    pub fn as_svg(&self) -> String {
-        let mut shape = String::new();
+#[derive(Debug, Default, Clone, Copy)]
+pub enum FlagCoordKind {
+    NegShort,
+    PosShort,
+    Long,
 
-        // Wrap in SVG container, using x/y min/max as viewBox
-        let (xmin, xmax) = (self.x.0, self.x.1);
-        let (ymin, ymax) = (-self.y.1, -self.y.0);
-        let width = xmax - xmin;
-        let height = ymax - ymin;
+    #[default]
+    Same,
+}
 
-        // Draw all the contours
-        for contour in &self.contours {
-            shape.push_str(&contour.as_svg());
+/// A flag describing a point in a glyph outline
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Flag {
+    pub repeats: u8,
+    pub on_curve: bool,
+    pub x_kind: FlagCoordKind,
+    pub y_kind: FlagCoordKind,
+}
+impl Flag {
+    pub fn from_byte(flag: u8) -> Self {
+        //
+        // Extract flag components
+        let on_curve = (flag & 0x01) != 0;
+        let x_short_vec = (flag & 0x02) != 0;
+        let y_short_vec = (flag & 0x04) != 0;
+        let repeats = flag & 0x08;
+        let x_same_or_pos = (flag & 0x10) != 0;
+        let y_same_or_pos = (flag & 0x20) != 0;
+
+        //
+        // Parse out the meanings
+        let x_kind = match (x_short_vec, x_same_or_pos) {
+            (true, false) => FlagCoordKind::NegShort, /* 1 byte coord - pos */
+            (true, true) => FlagCoordKind::PosShort,  /* 1 byte coord - neg */
+            (false, false) => FlagCoordKind::Long,    /* 2 byte short */
+            _ => FlagCoordKind::Same,                 /* Same as previous */
+        };
+        let y_kind = match (y_short_vec, y_same_or_pos) {
+            (true, false) => FlagCoordKind::NegShort, /* 1 byte coord - pos */
+            (true, true) => FlagCoordKind::PosShort,  /* 1 byte coord - neg */
+            (false, false) => FlagCoordKind::Long,    /* 2 byte short */
+            _ => FlagCoordKind::Same,                 /* Same as previous */
+        };
+
+        Self {
+            repeats,
+            on_curve,
+            x_kind,
+            y_kind,
         }
-
-        // Add a margin, preserving aspect ratio
-        let x_margin = 50;
-        let aspect_ratio = f32::from(width) / f32::from(height);
-        let y_margin = (f32::from(x_margin) / aspect_ratio) as i16;
-        let (xmin, xmax) = (xmin - x_margin, xmax + x_margin);
-        let (ymin, ymax) = (ymin - y_margin, ymax + y_margin);
-        let (width, height) = (xmax - xmin, ymax - ymin);
-
-        // Calculate a new set of sizes for the final display
-        let width2 = 75i16;
-        let height2 = (f32::from(width2) / aspect_ratio) as i16;
-
-        [
-            r#"<?xml version="1.0" encoding="UTF-8"?>"#.to_string(),
-            format!(
-                "<svg xmlns='http://www.w3.org/2000/svg' style='background-color:white' width='{width2}' height='{height2}' viewBox='{xmin} {ymin} {width} {height}'>{shape}</svg>"
-            ),
-        ].join("")
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Contour {
-    pub points: Vec<Point>,
-}
-impl Contour {
-    fn as_svg(&self) -> String {
-        let mut path = String::new();
-
-        // Move to the first point
-        let mut point_iter = self.points.iter();
-        if let Some(first) = point_iter.next() {
-            let (x, y) = (first.x, -first.y);
-            path.push_str(&format!("M{x} {y}"));
-        }
-
-        // Draw lines and curves
-        for point in point_iter {
-            let (x, y, on_curve) = (point.x, -point.y, point.on_curve);
-            let ctrl = if on_curve { 'L' } else { 'T' };
-            path.push_str(&format!("{ctrl}{x} {y}"));
-        }
-
-        // Close the path
-        path.push('Z');
-
-        format!("<path d='{path}' fill='none' stroke='black' stroke-width='10' />")
-    }
-}
-
-#[derive(Debug, Default, Clone)]
+/// A point in a glyph outline
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Point {
     pub x: i16,
     pub y: i16,
     pub on_curve: bool,
 }
 
-const ON_CURVE: u8 = 0x01;
-const X_SHORT: u8 = 0x02;
-const Y_SHORT: u8 = 0x04;
-const REPEAT: u8 = 0x08;
-const X_SAME: u8 = 0x10;
-const Y_SAME: u8 = 0x20;
+/// A set of points making up a contour in a glyph
+#[derive(Debug, Clone)]
+pub struct Contour {
+    pub points: Vec<Point>,
+}

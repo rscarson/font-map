@@ -8,6 +8,9 @@ pub use simple::SimpleGlyf;
 mod compound;
 pub use compound::CompoundGlyf;
 
+mod svg;
+pub use svg::SvgExt;
+
 /// The outline features of a glyph
 #[derive(Debug, Clone)]
 pub enum GlyfOutline {
@@ -41,7 +44,7 @@ impl GlyfOutline {
     }
 }
 impl Parse for GlyfOutline {
-    fn parse<'a>(reader: &'a mut BinaryReader<'a>) -> ParseResult<Self> {
+    fn parse(reader: &mut BinaryReader) -> ParseResult<Self> {
         let num_contours = reader.read_i16()?;
         let xmin = reader.read_i16()?;
         let ymin = reader.read_i16()?;
