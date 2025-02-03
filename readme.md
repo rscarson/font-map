@@ -35,7 +35,7 @@ use font_map::font::Font;
 let font = Font::from_file("google_material_symbols/font.ttf")?;
 if let Some(glyph) = font.glyph_named("delete") {
     let codepoint = glyph.codepoint();
-    let svg = glyph.svg_outline();
+    let svg = glyph.svg_preview();
 }
 ```
 
