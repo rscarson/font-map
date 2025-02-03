@@ -1,7 +1,7 @@
 [package]
 name = "google_material_symbols"
 description = "Google Material Design Icon Font"
-version = "0.1.2"
+version = "0.2.0"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,8 +11,8 @@ categories.workspace = true
 readme = "readme.md"
 
 [features]
-default = ["iced"]
-svg-preview = ["font-map-core/extended-svg"]
+default = []
+svg-preview = ["font-map-core/extended-svg", "font-map/extended-svg"]
 iced = ["dep:iced"]
 
 [dependencies]

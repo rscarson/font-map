@@ -19,6 +19,7 @@ mod reader;
 #[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
 mod codegen;
 
+mod svg;
 mod unicode_range;
 
 pub mod error;

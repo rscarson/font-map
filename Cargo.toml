@@ -14,12 +14,15 @@ readme = "readme.md"
 members = ["macros", "core", "google_material_symbols"]
 
 [features]
-default = ["codegen", "extended-svg", "macros"]
+default = ["codegen", "macros"]
 macros = ["font-map-macros"]
 codegen = ["font-map-core/codegen"]
 extended-svg = ["font-map-core/extended-svg", "font-map-macros/extended-svg"]
 
 debug-parser = ["font-map-core/debug-parser"]
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
 
 [dependencies]
 font-map-macros = { workspace = true, optional = true }
@@ -39,3 +42,17 @@ repository = "https://github.com/rscarson/font-map"
 
 keywords = ["font", "fonts", "text", "macros", "svg"]
 categories = ["api-bindings", "text-processing", "encoding", "gui"]
+
+[[bench]]
+name = "load-font"
+harness = false
+
+[[bench]]
+name = "render-svg"
+required-features = ["extended-svg"]
+harness = false
+
+[[bench]]
+name = "codegen"
+required-features = ["codegen"]
+harness = false

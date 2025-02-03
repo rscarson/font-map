@@ -77,7 +77,6 @@ impl Parse for SimpleGlyf {
             };
 
             last_x += delta;
-            debug_msg!("  X: {delta}");
             x_coordinates.push(last_x);
         }
 
@@ -94,7 +93,6 @@ impl Parse for SimpleGlyf {
             };
 
             last_y += delta;
-            debug_msg!("  Y: {delta}");
             y_coordinates.push(last_y);
         }
 

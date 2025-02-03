@@ -9,7 +9,6 @@ mod compound;
 pub use compound::CompoundGlyf;
 
 mod svg;
-pub use svg::SvgExt;
 
 /// The outline features of a glyph
 #[derive(Debug, Clone)]

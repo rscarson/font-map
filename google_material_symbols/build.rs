@@ -10,9 +10,6 @@ fn main() {
     let font = Font::new(FONT_BYTES).expect("Bundled font was invalid!");
     let code = font.gen_enum("Icon").to_string();
 
-    let outline = font.glyph_named("delete").unwrap().svg_outline();
-    std::fs::write("delete.svg", outline).expect("Failed to write delete.svg");
-
     //
     // Create the target file
     let dir = std::env::var("OUT_DIR").expect("OUT_DIR not set");

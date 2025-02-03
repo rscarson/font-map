@@ -19,7 +19,7 @@ fn main() -> ParseResult<()> {
 
         //
         // You can also export the glyph as an image
-        let _outline = glyph.svg_outline();
+        let _outline = glyph.svg_preview();
     });
 
     Ok(())

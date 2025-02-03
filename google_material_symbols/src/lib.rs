@@ -8,6 +8,8 @@
 //! This crate provides an enum of all the glyphs in the Google Material Symbols font.  
 //! Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 //!
+//! See <https://fonts.google.com/icons> for more information
+//!
 //! **I am not affiliated with Google Inc., nor do I have any rights to the Google Material Symbols font.**  
 //! This crate is published with a copy of the font, and its license, as allowed by the license.
 //!
@@ -29,11 +31,13 @@
 //! // You can also search for glyphs, and extract data about the font
 //! let font = load_font();
 //! let icon = font.glyph_named("delete").unwrap();
-//! let svg = icon.svg_outline(); // The same as the inline svg in the hover
+//! let svg = icon.svg_preview(); // The same as the inline svg in the hover
+//! ```
 //!
-//! //
-//! // If you use iced there are some QOL features built-in
-//! // `google_material_symbols::FONT_BYTES` is the raw bytes of the font, for loading into iced
+//! If you use iced there are some QOL features built-in:
+//!
+//! ```ignore
+//! `google_material_symbols::FONT_BYTES` is the raw bytes of the font, for loading into iced
 //! // You need to activate the `iced` feature to use these features
 //! let text_widget = Icon::Delete.into_text(24); // A text widget with the icon, in the font, size 24
 //! let widget: iced::Element<_> = Icon::Delete.into(); // A text widget with the icon, in the default font size

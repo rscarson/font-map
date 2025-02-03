@@ -9,13 +9,13 @@
 //!
 #![allow(clippy::match_on_vec_items)]
 #![allow(clippy::cast_possible_truncation)]
-use std::collections::HashMap;
-
 pub use crate::raw::ttf::NameKind as StringKind;
 use crate::{
     error::ParseResult,
-    raw::ttf::{GlyfOutline, SimpleGlyf, SvgExt, TrueTypeFont},
+    raw::ttf::{GlyfOutline, SimpleGlyf, TrueTypeFont},
+    svg::SvgExt,
 };
+use std::collections::HashMap;
 
 /// A parsed font, with access to its glyphs and stored strings
 #[derive(Debug, Clone)]
@@ -147,9 +147,9 @@ impl Glyph {
         &self.outline
     }
 
-    /// Returns the SVG data of this glyph's outline
+    /// Returns the SVG data of this glyph's outline  
     #[must_use]
-    pub fn svg_outline(&self) -> String {
+    pub fn svg_preview(&self) -> String {
         self.outline.to_svg()
     }
 
@@ -159,15 +159,14 @@ impl Glyph {
     /// Returns an error if the data cannot be compressed
     #[cfg(feature = "extended-svg")]
     #[cfg_attr(docsrs, doc(cfg(feature = "extended-svg")))]
-    pub fn svgz_outline(&self) -> std::io::Result<Vec<u8>> {
+    pub fn svgz_preview(&self) -> std::io::Result<Vec<u8>> {
         self.outline.to_svgz()
     }
 
     /// Generates a `data:` link containing the outline svg data for this glyph  
-    /// If `should_compress` is true, the SVG data will be compressed using gzip
     ///
     /// # Errors
-    /// Returns an error if the data cannot be encoded properly, or compressed if `should_compress` is true
+    /// Returns an error if the data cannot be encoded properly
     #[cfg(feature = "extended-svg")]
     #[cfg_attr(docsrs, doc(cfg(feature = "extended-svg")))]
     pub fn svg_dataimage_url(&self) -> std::io::Result<String> {
