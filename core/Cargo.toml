@@ -9,6 +9,10 @@ repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = []
 codegen = ["proc-macro2", "syn", "quote"]

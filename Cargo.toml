@@ -10,6 +10,10 @@ keywords.workspace = true
 categories.workspace = true
 readme = "readme.md"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [workspace]
 members = ["macros", "core", "google_material_symbols"]
 
@@ -56,3 +60,9 @@ harness = false
 name = "codegen"
 required-features = ["codegen"]
 harness = false
+
+[[example]]
+name = "generate_enum"
+
+[[example]]
+name = "loading_fonts"
