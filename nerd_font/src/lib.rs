@@ -74,7 +74,6 @@ pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
 )]
 #[must_use]
 pub fn load_font() -> font_map::font::Font {
-    Symbols::dev::Android;
     font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
 }
 
