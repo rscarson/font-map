@@ -38,7 +38,6 @@ impl Parse for SimpleGlyf {
         let _instructions = reader.read(instruction_length as usize)?;
 
         let num_points = last_pt + 1;
-        debug_msg!("  Num_points: {}", num_points);
 
         //
         // Parse instructions to get real point count
@@ -52,7 +51,6 @@ impl Parse for SimpleGlyf {
             // Repeat the flag
             if flag.repeats != 0 {
                 let n_times = reader.read_u8()?;
-                debug_msg!("  Repeats: {n_times}");
                 flag.repeats = n_times;
                 remaining_pts -= u16::from(n_times);
             }

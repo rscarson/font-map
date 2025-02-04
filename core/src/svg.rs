@@ -122,12 +122,9 @@ impl SvgPathComponent {
             let prev = &path[i - 1];
             let curr = &path[i];
 
-            let Some(prev_line) = prev.line_components() else {
-                i += 1;
-                continue;
-            };
-
-            let Some(curr_line) = curr.line_components() else {
+            let (Some(prev_line), Some(curr_line)) =
+                (prev.line_components(), curr.line_components())
+            else {
                 i += 1;
                 continue;
             };
@@ -225,8 +222,8 @@ impl SvgPathComponent {
     pub fn line_components(&self) -> Option<(i16, i16)> {
         match self {
             Self::MoveTo(x, y) | Self::LineTo(x, y) => Some((*x, *y)),
-            Self::HorizontalTo(x) => Some((*x, 0)),
-            Self::VerticalTo(y) => Some((0, *y)),
+            Self::HorizontalTo(x) => Some((*x, i16::MAX)),
+            Self::VerticalTo(y) => Some((i16::MAX, *y)),
             _ => None,
         }
     }

@@ -1,7 +1,7 @@
 [package]
-name = "google_material_symbols"
-description = "Google Material Design Icon Font"
-version = "0.2.3"
+name = "nerd_font_symbols"
+description = "Nerd Font Symbols"
+version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true

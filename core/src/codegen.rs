@@ -4,7 +4,7 @@ use crate::{
 };
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 use syn::Ident;
 
 mod to_ident;
@@ -15,7 +15,7 @@ pub trait FontCodegenExt {
     fn gen_enum(&self, name: &str) -> TokenStream;
 
     /// Generates a single entry in the enum for a glyph
-    fn gen_enum_entry(glyph: &Glyph) -> TokenStream;
+    fn gen_enum_entry(glyph: &Glyph, tracking: &mut HashSet<String>) -> TokenStream;
 
     /// Generates the comments for the enum
     fn gen_enum_comments(&self) -> Vec<String>;
@@ -23,8 +23,13 @@ pub trait FontCodegenExt {
 impl FontCodegenExt for Font {
     fn gen_enum(&self, name: &str) -> TokenStream {
         let identifier = Ident::new(name, Span::call_site());
+        let mut tracker = HashSet::new();
         let comments = self.gen_enum_comments();
-        let variants: Vec<_> = self.glyphs().iter().map(Self::gen_enum_entry).collect();
+        let variants: Vec<_> = self
+            .glyphs()
+            .iter()
+            .map(|g| Self::gen_enum_entry(g, &mut tracker))
+            .collect();
 
         let codepoints: Vec<_> = self.glyphs().iter().map(Glyph::codepoint).collect();
         let names: Vec<_> = self.glyphs().iter().map(Glyph::name).collect();
@@ -35,6 +40,7 @@ impl FontCodegenExt for Font {
         let codepoints_len = self.glyphs().len();
 
         quote! {
+            #[allow(rustdoc::bare_urls)]
             #( #[doc = #comments] )*
             #[derive(Debug, Clone, Copy)]
             #[rustfmt::skip]
@@ -121,8 +127,30 @@ impl FontCodegenExt for Font {
         comments
     }
 
-    fn gen_enum_entry(glyph: &Glyph) -> TokenStream {
-        let identifier = glyph.name().to_identifier();
+    fn gen_enum_entry(glyph: &Glyph, tracking: &mut HashSet<String>) -> TokenStream {
+        let mut identifier = glyph.name().to_identifier();
+        if tracking.contains(&identifier) {
+            identifier.push_str("Alt");
+
+            if !tracking.contains(&identifier) {
+                let mut idn = 2;
+                let mut buffer = itoa::Buffer::new();
+                loop {
+                    let idn_f = buffer.format(idn);
+                    let mut id = String::with_capacity(identifier.len() + idn_f.len());
+                    id.push_str(&identifier);
+                    id.push_str(idn_f);
+                    if !tracking.contains(&id) {
+                        identifier = id;
+                        break;
+                    }
+
+                    idn += 1;
+                }
+            }
+        }
+
+        tracking.insert(identifier.clone());
         let identifier = Ident::new(&identifier, Span::call_site());
 
         let name = glyph.name();

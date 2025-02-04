@@ -1,5 +1,6 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
+
 use crate::error::ParseResult;
 use crate::reader::{BinaryReader, Parse};
 
@@ -30,6 +31,7 @@ impl CompoundGlyf {
         let (mut min_x, mut max_x) = (i16::MAX, i16::MIN);
         let (mut min_y, mut max_y) = (i16::MAX, i16::MIN);
 
+        debug_msg!("Glyph has {} components", self.components.len());
         for component in &self.components {
             let glyph = &glyf_table[component.glyph_id as usize];
             match glyph {
@@ -72,43 +74,61 @@ impl Parse for CompoundGlyf {
             flags = reader.read_u16()?;
             let glyph_id = reader.read_u16()?;
 
-            let mut component = Component {
-                glyph_id,
-                ..Default::default()
+            //
+            // Get the arguments
+            let is_words = flags & ARG_1_AND_2_ARE_WORDS != 0;
+            let is_xy = flags & ARGS_ARE_XY_VALUES != 0;
+            let args = match (is_words, is_xy) {
+                (true, true) => {
+                    let arg1 = reader.read_i16()?;
+                    let arg2 = reader.read_i16()?;
+                    ComponentArguments::ShortCoordinates(arg1, arg2)
+                }
+
+                (true, false) => {
+                    let arg1 = reader.read_u16()?;
+                    let arg2 = reader.read_u16()?;
+                    ComponentArguments::ShortIndex(arg1, arg2)
+                }
+
+                (false, true) => {
+                    let arg1 = reader.read_i8()?;
+                    let arg2 = reader.read_i8()?;
+                    ComponentArguments::ByteCoordinates(arg1, arg2)
+                }
+
+                (false, false) => {
+                    let arg1 = reader.read_u8()?;
+                    let arg2 = reader.read_u8()?;
+                    ComponentArguments::ByteIndex(arg1, arg2)
+                }
             };
 
-            if flags & ARG_1_AND_2_ARE_WORDS != 0 {
-                let arg1 = reader.read_i16()?;
-                let arg2 = reader.read_i16()?;
-
-                component.arg1 = i32::from(arg1);
-                component.arg2 = i32::from(arg2);
-            } else {
-                let arg1 = reader.read_u8()?;
-                let arg2 = reader.read_u8()?;
-
-                component.arg1 = i32::from(arg1);
-                component.arg2 = i32::from(arg2);
-            }
-
-            if flags & WE_HAVE_A_SCALE != 0 {
+            //
+            // Get the scale
+            let scale = if flags & WE_HAVE_A_SCALE != 0 {
                 let scale = reader.read_f2dot14()?;
-                component.scale = Some(scale);
+                ComponentScale::Scale(scale)
             } else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {
                 let x_scale = reader.read_f2dot14()?;
                 let y_scale = reader.read_f2dot14()?;
-
-                component.xy_scale = Some((x_scale, y_scale));
+                ComponentScale::XYScale(x_scale, y_scale)
             } else if flags & WE_HAVE_A_TWO_BY_TWO != 0 {
                 let x_scale = reader.read_f2dot14()?;
                 let scale01 = reader.read_f2dot14()?;
                 let scale10 = reader.read_f2dot14()?;
                 let y_scale = reader.read_f2dot14()?;
+                ComponentScale::TwoByTwo(x_scale, scale01, scale10, y_scale)
+            } else {
+                ComponentScale::None
+            };
 
-                component.two_by_two = Some((x_scale, scale01, scale10, y_scale));
-            }
-
-            components.push(component);
+            components.push(Component {
+                glyph_id,
+                flags,
+                args,
+                scale,
+            });
 
             if flags & MORE_COMPONENTS == 0 {
                 break;
@@ -119,76 +139,144 @@ impl Parse for CompoundGlyf {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
+pub enum ComponentArguments {
+    ByteCoordinates(i8, i8),
+    ShortCoordinates(i16, i16),
+    ByteIndex(u8, u8),
+    ShortIndex(u16, u16),
+}
+
+#[derive(Debug, Clone)]
+pub enum ComponentScale {
+    None,
+    Scale(f64),
+    XYScale(f64, f64),
+    TwoByTwo(f64, f64, f64, f64),
+}
+
+#[derive(Debug, Clone)]
 pub struct Component {
     pub glyph_id: u16,
     pub flags: u16,
-    pub arg1: i32,
-    pub arg2: i32,
-    pub scale: Option<f64>,
-    pub xy_scale: Option<(f64, f64)>,
-    pub two_by_two: Option<(f64, f64, f64, f64)>,
+    pub args: ComponentArguments,
+    pub scale: ComponentScale,
 }
 impl Component {
-    pub fn scale_point(&self, point: &mut Point) {
-        if let Some(scale) = self.scale {
-            point.x = (f64::from(point.x) * scale) as i16;
-            point.y = (f64::from(point.y) * scale) as i16;
-        } else if let Some((x_scale, y_scale)) = self.xy_scale {
-            point.x = (f64::from(point.x) * x_scale) as i16;
-            point.y = (f64::from(point.y) * y_scale) as i16;
-        } else if let Some((x_scale, scale01, scale10, y_scale)) = self.two_by_two {
-            let x = f64::from(point.x);
-            let y = f64::from(point.y);
-
-            point.x = (x * x_scale + y * scale01) as i16;
-            point.y = (x * scale10 + y * y_scale) as i16;
-        }
-    }
-
+    #[allow(clippy::many_single_char_names)]
     pub fn apply_to_point(&self, point: &mut Point, parent: &Vec<Contour>, child: &Vec<Contour>) {
         //
-        // First we get the scaling factors
-        self.scale_point(point);
+        // Get the first set of parameters
+        let (a, b, c, d) = match self.scale {
+            ComponentScale::None => (1.0, 0.0, 0.0, 1.0),
+            ComponentScale::Scale(scale) => (scale, 0.0, 0.0, scale),
+            ComponentScale::XYScale(x_scale, y_scale) => (x_scale, 0.0, 0.0, y_scale),
+            ComponentScale::TwoByTwo(x_scale, scale01, scale10, y_scale) => {
+                (x_scale, scale01, scale10, y_scale)
+            }
+        };
 
         //
-        // Now we apply translation
-        if self.flags & ARGS_ARE_XY_VALUES != 0 {
-            // X-Y offset
-            point.x += self.arg1 as i16;
-            point.y += self.arg2 as i16;
+        // Get the 2nd set
+        let (e, f) = match self.args {
+            ComponentArguments::ShortCoordinates(e, f) => {
+                let e = f64::from(e);
+                let f = f64::from(f);
+                let e = a * e + b * f;
+                let f = c * e + d * f;
+                (e, f)
+            }
+            ComponentArguments::ByteCoordinates(e, f) => {
+                let e = f64::from(e);
+                let f = f64::from(f);
+                let e = a * e + b * f;
+                let f = c * e + d * f;
+                (e, f)
+            }
+
+            ComponentArguments::ShortIndex(compound_i, component_i) => {
+                let mut index = compound_i;
+                let mut point1 = Point::default();
+                for contour in parent {
+                    for point in &contour.points {
+                        if index == 0 {
+                            point1 = *point;
+                            break;
+                        }
+                        index -= 1;
+                    }
+                }
+
+                index = component_i;
+                let mut point2 = Point::default();
+                for contour in child {
+                    for point in &contour.points {
+                        if index == 0 {
+                            point2 = *point;
+                            break;
+                        }
+                        index -= 1;
+                    }
+                }
+
+                let e = f64::from(point1.x) - f64::from(point2.x);
+                let f = f64::from(point1.y) - f64::from(point2.y);
+                (e, f)
+            }
+
+            ComponentArguments::ByteIndex(compound_i, component_i) => {
+                let mut index = compound_i;
+                let mut point1 = Point::default();
+                for contour in parent {
+                    for point in &contour.points {
+                        if index == 0 {
+                            point1 = *point;
+                            break;
+                        }
+                        index -= 1;
+                    }
+                }
+
+                index = component_i;
+                let mut point2 = Point::default();
+                for contour in child {
+                    for point in &contour.points {
+                        if index == 0 {
+                            point2 = *point;
+                            break;
+                        }
+                        index -= 1;
+                    }
+                }
+
+                let e = f64::from(point1.x) - f64::from(point2.x);
+                let f = f64::from(point1.y) - f64::from(point2.y);
+                (e, f)
+            }
+        };
+
+        //
+        // Calculate the last set of parameters
+        let m0 = a.abs().max(b.abs());
+        let n0 = c.abs().max(d.abs());
+        let m = if (a.abs() - c.abs()) <= 33.0 / 65536.0 {
+            2.0 * m0
         } else {
-            // Point index
-            let mut index = self.arg1;
-            let mut point1 = Point::default();
-            for contour in parent {
-                for point in &contour.points {
-                    if index == 0 {
-                        point1 = *point;
-                        break;
-                    }
-                    index -= 1;
-                }
-            }
+            m0
+        };
+        let n = if (b.abs() - d.abs()) <= 33.0 / 65536.0 {
+            2.0 * n0
+        } else {
+            n0
+        };
 
-            index = self.arg2;
-            let mut point2 = Point::default();
-            for contour in child {
-                for point in &contour.points {
-                    if index == 0 {
-                        point2 = *point;
-                        break;
-                    }
-                    index -= 1;
-                }
-            }
+        //
+        // Perform linear transformation
+        let x = m * ((a / m) * f64::from(point.x) + (c / m) * f64::from(point.y) + e);
+        let y = n * ((b / n) * f64::from(point.x) + (d / n) * f64::from(point.y) + f);
 
-            self.scale_point(&mut point1);
-            self.scale_point(&mut point2);
-
-            point.x += point1.x - point2.x;
-            point.y += point1.y - point2.y;
-        }
+        point.x = x.round() as i16;
+        point.y = y.round() as i16;
     }
 
     pub fn apply_to_glyf(&self, glyf: &SimpleGlyf, parent: &Vec<Contour>) -> SimpleGlyf {

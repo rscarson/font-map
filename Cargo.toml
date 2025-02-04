@@ -15,7 +15,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
-members = ["macros", "core", "google_material_symbols"]
+members = ["macros", "core", "google_material_symbols", "nerd_font_symbols"]
 
 [features]
 default = ["codegen", "macros"]
@@ -33,12 +33,12 @@ font-map-macros = { workspace = true, optional = true }
 font-map-core = { workspace = true }
 
 [workspace.dependencies]
-font-map = { path = ".", version = "0.2.2" }
-font-map-core = { path = "core", version = "0.2.2" }
-font-map-macros = { path = "macros", version = "0.2.2" }
+font-map = { path = ".", version = "0.2.3" }
+font-map-core = { path = "core", version = "0.2.3" }
+font-map-macros = { path = "macros", version = "0.2.3" }
 
 [workspace.package]
-version = "0.2.2"
+version = "0.2.3"
 authors = ["@rscarson"]
 edition = "2021"
 license = "MIT"
