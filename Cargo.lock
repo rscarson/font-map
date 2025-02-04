@@ -2039,7 +2039,7 @@ dependencies = [
 
 [[package]]
 name = "nerd_font_symbols"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "font-map",
  "font-map-core",
