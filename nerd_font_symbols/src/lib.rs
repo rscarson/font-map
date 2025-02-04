@@ -24,13 +24,13 @@
 //! //
 //! // You can access the icon by name, and get the postfix name, or codepoint
 //! // You can also hover over the icon to see information about it, and a preview of the icon (as inline svg)
-//! assert_eq!(Icon::Delete.name(), "delete");
-//! let codepoint = Icon::Delete as u32;
+//! assert_eq!(Icon::FaArrowLeft.name(), "fa-arrow_left");
+//! let codepoint = Icon::FaArrowLeft as u32;
 //!
 //! //
 //! // You can also search for glyphs, and extract data about the font
 //! let font = load_font();
-//! let icon = font.glyph_named("delete").unwrap();
+//! let icon = font.glyph_named("fa-arrow_left").unwrap();
 //! let svg = icon.svg_preview(); // The same as the inline svg in the hover
 //! ```
 //!
@@ -39,8 +39,8 @@
 //! ```ignore
 //! // `nerd_font_symbols::FONT_BYTES` is the raw bytes of the font, for loading into iced
 //! // You need to activate the `iced` feature to use these features
-//! let text_widget = Icon::Delete.into_text(24); // A text widget with the icon, in the font, size 24
-//! let widget: iced::Element<_> = Icon::Delete.into(); // A text widget with the icon, in the default font size
+//! let text_widget = Icon::FaArrowLeft.into_text(24); // A text widget with the icon, in the font, size 24
+//! let widget: iced::Element<_> = Icon::FaArrowLeft.into(); // A text widget with the icon, in the default font size
 //!
 //! ```
 //!
