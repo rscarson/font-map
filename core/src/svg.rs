@@ -7,7 +7,7 @@ pub trait PartialSvgExt {
 }
 
 /// Implements methods for converting a glyph to an SVG representation
-pub trait SvgExt: PartialSvgExt {
+pub trait SvgExt {
     /// Returns the outline of this glyph as an SVG document
     #[must_use]
     fn to_svg(&self) -> String;

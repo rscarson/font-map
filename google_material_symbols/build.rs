@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use font_map_core::{font::Font, FontCodegenExt};
+use font_map_core::{font::Font, FontEnum};
 
 const FONT_BYTES: &[u8] = include_bytes!("font.ttf");
 
@@ -8,7 +8,7 @@ fn main() {
     println!("cargo:rerun-if-changed=font.ttf");
 
     let font = Font::new(FONT_BYTES).expect("Bundled font was invalid!");
-    let code = font.gen_enum("Icon").to_string();
+    let code = FontEnum::from_font("Icon", &font).codegen().to_string();
 
     //
     // Create the target file

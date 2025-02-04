@@ -1,20 +1,19 @@
-//! # JetbrainsMono Nerd Font
+//! # `JetbrainsMono Nerd Font`
 //!
 //! [![Crates.io](https://img.shields.io/crates/v/nerd_font_symbols.svg)](https://crates.io/crates/nerd_font_symbols/)
 //! [![Build Status](https://github.com/rscarson/font-map/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/rscarson/font-map/actions?query=branch%3Amaster)
 //! [![docs.rs](https://img.shields.io/docsrs/nerd_font_symbols)](https://docs.rs/nerd_font_symbols/latest/)
 //! [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/rscarson/nerd_font_symbols/master/LICENSE)
 //!
-//! This crate provides an enum of all the glyphs in the JetbrainsMono Nerd Font.  
+//! This crate provides an enum of all the glyphs in the `JetbrainsMono Nerd Font`.  
 //! Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 //!
 //! See <https://www.nerdfonts.com/> for more information
 //!
-//! **I am not affiliated with Nerd Fonts, nor do I have any rights to the JetbrainsMono Nerd Font.**  
+//! **I am not affiliated with Nerd Fonts, nor do I have any rights to the `JetbrainsMono Nerd Font`.**  
 //! This crate is published with a copy of the font, and its license, as allowed by the license.
 //!
-//! See [`Icon`] for the list of available icons, including their names, codepoints and a preview image.  
-//! See [`Icon::FONT_FAMILY`] for the functions and constants available on the enum (So you don't need to scroll past 3,589 icons to find it!)
+//! See [`Symbols`] for the list of available icons, including their names, codepoints and a preview image.  
 //!
 //! ## Example
 //!
@@ -65,10 +64,10 @@ pub use font_map;
 // Generated font bindings
 include!(env!("FONT_ENUM"));
 
-/// The contents of the Google Material Icons font file
+/// The contents of the Font file
 pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
 
-/// Load the Google Material Icons font, returning a `font_map::Font` instance
+/// Load the Nerd Font symbols, returning a `font_map::Font` instance
 #[allow(
     clippy::missing_panics_doc,
     reason = "The panic message is clear enough"
@@ -78,23 +77,37 @@ pub fn load_font() -> font_map::font::Font {
     font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
 }
 
-impl Icon {
-    /// Returns a font definition for this font
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+pub trait IcedExt {
+    /// Returns an iced font definition for this font
+    fn iced_font() -> iced::Font;
+
+    /// Converts this enum into an iced Text widget
     #[must_use]
-    pub fn iced_font() -> iced::Font {
+    fn into_text<'a, Theme>(
+        self,
+        font_size: impl Into<iced::Pixels>,
+    ) -> iced::widget::Text<'a, Theme>
+    where
+        Theme: iced::widget::text::Catalog;
+
+    /// Converts this enum into an iced Element with the default font size
+    fn into_element<'a, Message>(self) -> iced::Element<'a, Message>
+    where
+        Message: 'a;
+}
+#[cfg(feature = "iced")]
+impl IcedExt for font_map::font::Glyph {
+    fn iced_font() -> iced::Font {
         iced::font::Font {
-            family: iced::font::Family::Name(Icon::FONT_FAMILY),
+            family: iced::font::Family::Name(Symbols::FONT_FAMILY),
             ..Default::default()
         }
     }
 
-    /// Converts this enum into an iced Text widget
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
     #[must_use]
-    pub fn into_text<'a, Theme>(
+    fn into_text<'a, Theme>(
         self,
         font_size: impl Into<iced::Pixels>,
     ) -> iced::widget::Text<'a, Theme>
@@ -105,13 +118,12 @@ impl Icon {
             .font(Self::iced_font())
             .size(font_size)
     }
-}
 
-#[cfg(feature = "iced")]
-#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-impl<'a, Message> From<Icon> for iced::Element<'a, Message> {
-    fn from(value: Icon) -> Self {
+    fn into_element<'a, Message>(self) -> iced::Element<'a, Message>
+    where
+        Message: 'a,
+    {
         let font_size = iced::settings::Settings::default().default_text_size;
-        value.into_text(font_size).into()
+        self.into_text(font_size).into()
     }
 }

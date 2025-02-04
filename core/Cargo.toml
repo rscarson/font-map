@@ -20,6 +20,7 @@ extended-svg = ["base64", "flate2"]
 debug-parser = []
 
 [dependencies]
+iced = { version = "0.13", optional = true }
 itoa = "1.0" # Faster SVG rendering
 encoding_rs = "0.8.35" # String decode
 

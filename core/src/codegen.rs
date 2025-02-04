@@ -1,16 +1,16 @@
-use crate::{
-    codegen::to_ident::ToIdentExt,
-    font::{Font, Glyph, StringKind},
-};
-use proc_macro2::{Span, TokenStream};
-use quote::quote;
-use std::{collections::HashSet, str::FromStr};
-use syn::Ident;
-
+mod docstring;
 mod to_ident;
 
-/// Trait used to perform code generation for a font
-pub trait FontCodegenExt {
+mod const_kind;
+pub use const_kind::FontConst;
+
+mod enum_kind;
+pub use enum_kind::FontEnum;
+
+/*
+
+/// Trait used to perform code generation for a font in the form of an enum
+pub trait FontEnumCodegenExt {
     /// Generates an enum representing the glyphs in the font
     fn gen_enum(&self, name: &str) -> TokenStream;
 
@@ -20,7 +20,7 @@ pub trait FontCodegenExt {
     /// Generates the comments for the enum
     fn gen_enum_comments(&self) -> Vec<String>;
 }
-impl FontCodegenExt for Font {
+impl FontEnumCodegenExt for Font {
     fn gen_enum(&self, name: &str) -> TokenStream {
         let identifier = Ident::new(name, Span::call_site());
         let mut tracker = HashSet::new();
@@ -186,3 +186,4 @@ impl FontCodegenExt for Font {
         }
     }
 }
+ */

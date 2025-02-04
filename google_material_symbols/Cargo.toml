@@ -10,6 +10,10 @@ keywords.workspace = true
 categories.workspace = true
 readme = "readme.md"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = ["svg-preview"]
 svg-preview = ["font-map-core/extended-svg", "font-map/extended-svg"]

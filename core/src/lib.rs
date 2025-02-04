@@ -27,7 +27,11 @@ pub mod font;
 
 #[cfg(feature = "codegen")]
 #[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
-pub use codegen::FontCodegenExt;
+pub use quote::quote;
+
+#[cfg(feature = "codegen")]
+#[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
+pub use codegen::*;
 
 /// This module contains the raw data structures from parsing font files
 pub mod raw {

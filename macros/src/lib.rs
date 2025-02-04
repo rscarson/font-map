@@ -1,4 +1,4 @@
-use font_map_core::{font::Font, FontCodegenExt};
+use font_map_core::{font::Font, FontEnum};
 use proc_macro::TokenStream;
 use syn::{parse::Parse, parse_macro_input, Ident, LitStr};
 
@@ -30,5 +30,5 @@ pub fn font(input: TokenStream) -> TokenStream {
         std::fs::read(&path).unwrap_or_else(|_| panic!("Failed to read font at `{path}`"));
     let font = Font::new(&font_bytes).unwrap_or_else(|_| panic!("Invalid font file: `{path}`"));
 
-    font.gen_enum(&identifier).into()
+    FontEnum::from_font(&identifier, &font).codegen().into()
 }

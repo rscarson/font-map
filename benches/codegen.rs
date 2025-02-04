@@ -1,10 +1,10 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use font_map::{font::Font, FontCodegenExt};
+use font_map::{font::Font, FontEnum};
 
 const FONT: &[u8] = include_bytes!("../google_material_symbols/font.ttf");
 
 fn load(font: &Font) -> String {
-    font.gen_enum("Icon").to_string()
+    FontEnum::from_font("Icon", font).codegen().to_string()
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

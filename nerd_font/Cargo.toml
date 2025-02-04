@@ -1,6 +1,6 @@
 [package]
-name = "nerd_font_symbols"
-description = "Nerd Font Symbols"
+name = "nerd_font"
+description = "Enumerated contents of the JetBrainsMono Nerd Font"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -9,6 +9,10 @@ repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme = "readme.md"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["svg-preview"]
