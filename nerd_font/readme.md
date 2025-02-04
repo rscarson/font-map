@@ -1,22 +1,21 @@
 <!-- cargo-rdme start -->
 
-# JetbrainsMono Nerd Font
+# `JetbrainsMono Nerd Font`
 
 [![Crates.io](https://img.shields.io/crates/v/nerd_font_symbols.svg)](https://crates.io/crates/nerd_font_symbols/)
 [![Build Status](https://github.com/rscarson/font-map/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/rscarson/font-map/actions?query=branch%3Amaster)
 [![docs.rs](https://img.shields.io/docsrs/nerd_font_symbols)](https://docs.rs/nerd_font_symbols/latest/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/rscarson/nerd_font_symbols/master/LICENSE)
 
-This crate provides an enum of all the glyphs in the JetbrainsMono Nerd Font.  
+This crate provides an enum of all the glyphs in the `JetbrainsMono Nerd Font`.  
 Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 
 See <https://www.nerdfonts.com/> for more information
 
-**I am not affiliated with Nerd Fonts, nor do I have any rights to the JetbrainsMono Nerd Font.**  
+**I am not affiliated with Nerd Fonts, nor do I have any rights to the `JetbrainsMono Nerd Font`.**  
 This crate is published with a copy of the font, and its license, as allowed by the license.
 
-See [`Icon`] for the list of available icons, including their names, codepoints and a preview image.  
-See [`Icon::FONT_FAMILY`] for the functions and constants available on the enum (So you don't need to scroll past 3,589 icons to find it!)
+See [`Symbols`] for the list of available icons, including their names, codepoints and a preview image.  
 
 ## Example
 
