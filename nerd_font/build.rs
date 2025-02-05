@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use font_map_core::{font::Font, FontConst};
+use font_map_core::{font::Font, FontDesc};
 
 const FONT_BYTES: &[u8] = include_bytes!("font.ttf");
 
@@ -8,7 +8,8 @@ fn main() {
     println!("cargo:rerun-if-changed=font.ttf");
 
     let font = Font::new(FONT_BYTES).expect("Bundled font was invalid!");
-    let code = FontConst::from_font("Symbols", &font).codegen().to_string();
+    let generator = FontDesc::from_font("Symbols", &font, false);
+    let code = generator.codegen(None).to_string();
 
     //
     // Create the target file
@@ -17,7 +18,7 @@ fn main() {
 
     //
     // Provide an ENV var with the path to the generated file
-    println!("cargo:rustc-env=FONT_ENUM={}", target.display());
+    println!("cargo:rustc-env=FONT_GEN={}", target.display());
 
     //
     // Write the file

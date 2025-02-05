@@ -1,189 +1,189 @@
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::Ident;
+
+use crate::font::{Font, StringKind};
+
 mod docstring;
+use docstring::DocstringExt;
+
 mod to_ident;
+use to_ident::{to_categories, to_identifiers};
 
-mod const_kind;
-pub use const_kind::FontConst;
+mod category;
+use category::FontCategoryDesc;
 
-mod enum_kind;
-pub use enum_kind::FontEnum;
-
-/*
-
-/// Trait used to perform code generation for a font in the form of an enum
-pub trait FontEnumCodegenExt {
-    /// Generates an enum representing the glyphs in the font
-    fn gen_enum(&self, name: &str) -> TokenStream;
-
-    /// Generates a single entry in the enum for a glyph
-    fn gen_enum_entry(glyph: &Glyph, tracking: &mut HashSet<String>) -> TokenStream;
-
-    /// Generates the comments for the enum
-    fn gen_enum_comments(&self) -> Vec<String>;
+/// Describes a font used for code generation
+#[derive(Debug, Clone)]
+pub struct FontDesc {
+    identifier: Ident,
+    family: Option<String>,
+    comments: Vec<String>,
+    categories: Vec<FontCategoryDesc>,
 }
-impl FontEnumCodegenExt for Font {
-    fn gen_enum(&self, name: &str) -> TokenStream {
+impl FontDesc {
+    /// Describe the font from a `Font` instance, optionally skipping categories
+    pub fn from_font(name: &str, font: &Font, skip_categories: bool) -> Self {
         let identifier = Ident::new(name, Span::call_site());
-        let mut tracker = HashSet::new();
-        let comments = self.gen_enum_comments();
-        let variants: Vec<_> = self
-            .glyphs()
-            .iter()
-            .map(|g| Self::gen_enum_entry(g, &mut tracker))
-            .collect();
+        let family = font.string(StringKind::FontFamily).map(ToString::to_string);
+        let mut comments = font.gen_docblock();
 
-        let codepoints: Vec<_> = self.glyphs().iter().map(Glyph::codepoint).collect();
-        let names: Vec<_> = self.glyphs().iter().map(Glyph::name).collect();
-
-        let font_family = self.string(StringKind::FontFamily);
-        let font_family: Vec<_> = font_family.iter().collect();
-
-        let codepoints_len = self.glyphs().len();
-
-        quote! {
-            #[allow(rustdoc::bare_urls)]
-            #( #[doc = #comments] )*
-            #[derive(Debug, Clone, Copy)]
-            #[rustfmt::skip]
-            #[repr(u32)]
-            pub enum #identifier {
-                #( #variants )*
-            }
-
-            #[rustfmt::skip]
-            impl #identifier {
-                #(
-                    /// The font family of the glyph
-                    #[allow(dead_code)]
-                    pub const FONT_FAMILY: &str = #font_family;
-                )*
-
-                /// The number of glyphs in the font
-                #[allow(dead_code)]
-                pub const GLYPHS: usize = #codepoints_len;
-
-                /// Returns the postscript name of the glyph
-                #[allow(clippy::too_many_lines)]
-                #[allow(clippy::match_same_arms)]
-                #[must_use]
-                pub fn name(&self) -> &'static str {
-                    match *self as u32 {
-                        #( #codepoints => #names, )*
-                        _ => ".notdef",
-                    }
-                }
-            }
-
-            impl From<#identifier> for char {
-                fn from(value: #identifier) -> Self {
-                    std::char::from_u32(value as u32).unwrap_or(char::REPLACEMENT_CHARACTER)
-                }
-            }
-
-            impl From<&#identifier> for char {
-                fn from(value: &#identifier) -> Self {
-                    (*value).into()
-                }
-            }
-
-            impl std::fmt::Display for #identifier {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    write!(f, "{}", char::from(*self))
-                }
-            }
-        }
-    }
-
-    fn gen_enum_comments(&self) -> Vec<String> {
-        let name = self.string(StringKind::FullFontName);
-        let copyright = self.string(StringKind::CopyrightNotice);
-        let description = self.string(StringKind::Description);
-
-        let mut comments = Vec::new();
-
-        if let Some(name) = name {
-            comments.push(format!("{name}  "));
-        }
-
-        if let Some(copy) = copyright {
-            comments.push(format!("{copy}  "));
-        }
-
-        if let Some(desc) = description {
-            comments.push(format!("{desc}  "));
-        }
-
-        if !comments.is_empty() {
-            comments.push(String::new());
-        }
-
-        comments.push(format!(
-            "Contains the complete set of {} named glyphs for this font  ",
-            self.glyphs().len()
-        ));
-        comments.push("Glyphs can be converted to their respective codepoints using `as u32`, or to `char` and `String` using `.into()`  ".to_string());
-        comments
-            .push("The postscript name for each glyph can be accessed using `.name()`".to_string());
-
-        comments
-    }
-
-    fn gen_enum_entry(glyph: &Glyph, tracking: &mut HashSet<String>) -> TokenStream {
-        let mut identifier = glyph.name().to_identifier();
-        if tracking.contains(&identifier) {
-            identifier.push_str("Alt");
-
-            if !tracking.contains(&identifier) {
-                let mut idn = 2;
-                let mut buffer = itoa::Buffer::new();
-                loop {
-                    let idn_f = buffer.format(idn);
-                    let mut id = String::with_capacity(identifier.len() + idn_f.len());
-                    id.push_str(&identifier);
-                    id.push_str(idn_f);
-                    if !tracking.contains(&id) {
-                        identifier = id;
-                        break;
-                    }
-
-                    idn += 1;
-                }
-            }
-        }
-
-        tracking.insert(identifier.clone());
-        let identifier = Ident::new(&identifier, Span::call_site());
-
-        let name = glyph.name();
-        let codepoint = glyph.codepoint();
-
-        let comments = [
-            format!("`{name} (U+{codepoint:04X})`  "),
-            format!("Unicode range: {}", glyph.unicode_range()),
-        ];
-
-        #[cfg(not(feature = "extended-svg"))]
-        let extended_svg = quote! {};
-        #[cfg(feature = "extended-svg")]
-        let extended_svg = {
-            if let Ok(url) = glyph.svg_dataimage_url() {
-                let link = format!("![Preview Glyph]({url})");
-                quote! {
-                    #[doc = ""]
-                    #[doc = #link]
-                }
-            } else {
-                quote! {}
-            }
+        let glyphs = font.glyphs();
+        let mut categories = if skip_categories {
+            let glyphs = to_identifiers(glyphs);
+            vec![FontCategoryDesc::new(name, glyphs)]
+        } else {
+            to_categories(glyphs)
+                .into_iter()
+                .map(|(name, glyphs)| FontCategoryDesc::new(&name, glyphs))
+                .collect()
         };
 
-        let codepoint = format!("{codepoint:#x}");
-        let codepoint = TokenStream::from_str(&codepoint).unwrap();
+        if categories.len() == 1 {
+            let category = &mut categories[0];
+            category.set_name(name);
+            category.set_comments(comments.drain(..));
+        }
 
-        quote! {
-            #( #[doc = #comments] )*
-            #extended_svg
-            #identifier = #codepoint,
+        Self {
+            identifier,
+            family,
+            comments,
+            categories,
+        }
+    }
+
+    /// Returns true if this font has only one category
+    #[must_use]
+    pub fn is_single_category(&self) -> bool {
+        self.categories.len() == 1
+    }
+
+    /// Generate the code for the font
+    ///
+    /// Optionally, you can inject additional code into the generated font's impl
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn codegen(&self, extra_impl: Option<TokenStream>) -> TokenStream {
+        let identifier = &self.identifier;
+        let outer_comments = &self.comments;
+        let font_family = self.family.iter();
+        let injection = extra_impl.iter();
+
+        if self.is_single_category() {
+            let category = &self.categories[0];
+
+            category.codegen(Some(quote! {
+                #(
+                    /// The family name for font
+                    pub const FONT_FAMILY: &str = #font_family;
+                )*
+            }))
+        } else {
+            //
+            // Categories in a module, generate an outer wrapper enum
+            let categories: Vec<TokenStream> = self.categories.iter().map(Into::into).collect();
+
+            let variant_names: Vec<_> =
+                self.categories.iter().map(FontCategoryDesc::name).collect();
+
+            let variants = self.categories.iter().map(|cat| {
+                let name = cat.name();
+                let comments = cat.comments();
+                quote! {
+                    #( #[doc = #comments] )*
+                    #name(categories :: #name),
+                }
+            });
+
+            quote! {
+                /// Contains a set of enums for each of the sub-categories in this font
+                pub mod categories {
+                    #( #categories )*
+                }
+
+                #[allow(rustdoc::bare_urls)]
+                #( #[doc = #outer_comments] )*
+                #[doc = ""]
+                #[doc = "See the [`categories`] module for more information."]
+                #[derive(Debug, Clone, Copy)]
+                #[rustfmt::skip]
+                pub enum #identifier {
+                    #( #variants )*
+                }
+
+                #[rustfmt::skip]
+                #[allow(dead_code)]
+                impl #identifier {
+                    #(
+                        /// The family name for this glyph's font
+                        pub const FONT_FAMILY: &str = #font_family;
+                    )*
+
+                    /// Returns the postscript name of the glyph
+                    #[allow(clippy::too_many_lines)]
+                    #[allow(clippy::match_same_arms)]
+                    #[must_use]
+                    pub fn name(&self) -> &'static str {
+                        match self {
+                            #( Self :: #variant_names(inner) => inner.name(), )*
+                        }
+                    }
+
+                    #(
+                        #injection
+                    )*
+                }
+
+                #(
+                    impl From<categories :: #variant_names> for #identifier {
+                        fn from(value: categories :: #variant_names) -> Self {
+                            Self :: #variant_names(value)
+                        }
+                    }
+                )*
+
+                impl From<#identifier> for char {
+                    fn from(value: #identifier) -> Self {
+                        match value {
+                            #( #identifier :: #variant_names(inner) => char::from(inner), )*
+                        }
+                    }
+                }
+
+                impl From<&#identifier> for char {
+                    fn from(value: &#identifier) -> Self {
+                        (*value).into()
+                    }
+                }
+
+                impl From<#identifier> for u32 {
+                    fn from(value: #identifier) -> Self {
+                        match value {
+                            #( #identifier :: #variant_names(inner) => inner as u32, )*
+                        }
+                    }
+                }
+
+                impl From<&#identifier> for u32 {
+                    fn from(value: &#identifier) -> Self {
+                        (*value).into()
+                    }
+                }
+
+                impl std::fmt::Display for #identifier {
+                    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        match self {
+                            #( #identifier :: #variant_names(inner) => inner.fmt(f), )*
+                        }
+                    }
+                }
+            }
         }
     }
 }
- */
+
+impl From<&FontDesc> for TokenStream {
+    fn from(value: &FontDesc) -> Self {
+        value.codegen(None)
+    }
+}

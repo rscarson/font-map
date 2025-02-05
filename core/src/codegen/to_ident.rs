@@ -64,6 +64,7 @@ pub fn uniquify<F: Fn(&str) -> bool>(name: &str, is_unique: F) -> String {
     identifier
 }
 
+#[allow(dead_code)]
 pub trait ToIdentExt {
     /// Converts a font string to a valid Rust identifier
     /// Font strings use . - _ and alphanumeric characters
@@ -79,7 +80,7 @@ impl ToIdentExt for str {
     fn to_category(&self) -> (Option<String>, String) {
         let parts = self.splitn(2, '-').collect::<Vec<_>>();
         match parts.as_slice() {
-            [prefix, rest] => (Some(prefix.to_modname()), rest.to_identifier()),
+            [prefix, rest] => (Some(prefix.to_identifier()), rest.to_identifier()),
             [rest] => (None, rest.to_identifier()),
             _ => (None, "_".to_string()),
         }

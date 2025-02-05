@@ -13,7 +13,7 @@
 //! **I am not affiliated with Nerd Fonts, nor do I have any rights to the `JetbrainsMono Nerd Font`.**  
 //! This crate is published with a copy of the font, and its license, as allowed by the license.
 //!
-//! See [`Symbols`] for the list of available icons, including their names, codepoints and a preview image.  
+//! See [`Symbols`] or [`categories`] for the list of available icons, including their names, codepoints and a preview image.  
 //!
 //! ## Example
 //!
@@ -23,7 +23,7 @@
 //! //
 //! // You can access the icon by name, and get the postfix name, or codepoint
 //! // You can also hover over the icon to see information about it, and a preview of the icon (as inline svg)
-//! assert_eq!(Symbols::, "fa-arrow_left");
+//! assert_eq!(categories::Fa::ArrowLeft.name(), "fa-arrow_left");
 //! let codepoint = Icon::FaArrowLeft as u32;
 //!
 //! //
@@ -62,7 +62,7 @@ pub use font_map;
 
 //
 // Generated font bindings
-include!(env!("FONT_ENUM"));
+include!(env!("FONT_GEN"));
 
 /// The contents of the Font file
 pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
@@ -77,37 +77,23 @@ pub fn load_font() -> font_map::font::Font {
     font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
 }
 
-#[cfg(feature = "iced")]
-#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-pub trait IcedExt {
-    /// Returns an iced font definition for this font
-    fn iced_font() -> iced::Font;
-
-    /// Converts this enum into an iced Text widget
+impl Symbols {
+    /// Returns a font definition for this font
+    #[cfg(feature = "iced")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
     #[must_use]
-    fn into_text<'a, Theme>(
-        self,
-        font_size: impl Into<iced::Pixels>,
-    ) -> iced::widget::Text<'a, Theme>
-    where
-        Theme: iced::widget::text::Catalog;
-
-    /// Converts this enum into an iced Element with the default font size
-    fn into_element<'a, Message>(self) -> iced::Element<'a, Message>
-    where
-        Message: 'a;
-}
-#[cfg(feature = "iced")]
-impl IcedExt for font_map::font::Glyph {
-    fn iced_font() -> iced::Font {
+    pub fn iced_font() -> iced::Font {
         iced::font::Font {
             family: iced::font::Family::Name(Symbols::FONT_FAMILY),
             ..Default::default()
         }
     }
 
+    /// Converts this enum into an iced Text widget
+    #[cfg(feature = "iced")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
     #[must_use]
-    fn into_text<'a, Theme>(
+    pub fn into_text<'a, Theme>(
         self,
         font_size: impl Into<iced::Pixels>,
     ) -> iced::widget::Text<'a, Theme>
@@ -118,12 +104,13 @@ impl IcedExt for font_map::font::Glyph {
             .font(Self::iced_font())
             .size(font_size)
     }
+}
 
-    fn into_element<'a, Message>(self) -> iced::Element<'a, Message>
-    where
-        Message: 'a,
-    {
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+impl<'a, Message> From<Symbols> for iced::Element<'a, Message> {
+    fn from(value: Symbols) -> Self {
         let font_size = iced::settings::Settings::default().default_text_size;
-        self.into_text(font_size).into()
+        value.into_text(font_size).into()
     }
 }

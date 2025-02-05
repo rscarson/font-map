@@ -8,18 +8,17 @@ use font_map::font;
 
 //
 // A very simple font with only a few glyphs
-font!(Font, "examples/slick.ttf");
+font!(Symbols, "examples/slick.ttf");
 
 fn main() {
-    println!(
-        "Font `{}` contains {} glyphs",
-        Font::FONT_FAMILY,
-        Font::GLYPHS
-    );
+    let num_glyphs = Symbols::TOTAL_GLYPHS;
+    let font_family = Symbols::FONT_FAMILY;
+    println!("`{font_family}` has {num_glyphs} glyphs");
 
     //
-    // Hover over the variant to see a preview of the glyph!
-    // (If rust-analyzer or equivalent is installed)
-    let arrow_left = Font::Arrowleft;
-    println!("Arrow left: {arrow_left}");
+    // Hover over `Symbols::Bullet` to see the glyph!
+    let symbol_name = Symbols::Bullet.name();
+    let symbol_code = Symbols::Bullet as u32;
+    let symbol_str = Symbols::Bullet.to_string();
+    println!("The glyph `{symbol_name}` has codepoint {symbol_code:04x}: `{symbol_str}`");
 }
