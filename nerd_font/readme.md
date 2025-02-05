@@ -15,7 +15,7 @@ See <https://www.nerdfonts.com/> for more information
 **I am not affiliated with Nerd Fonts, nor do I have any rights to the `JetbrainsMono Nerd Font`.**  
 This crate is published with a copy of the font, and its license, as allowed by the license.
 
-See [`Symbols`] for the list of available icons, including their names, codepoints and a preview image.  
+See [`Symbols`] or [`categories`] for the list of available icons, including their names, codepoints and a preview image.  
 
 ## Example
 
@@ -25,7 +25,7 @@ use nerd_font::{Icon, load_font};
 //
 // You can access the icon by name, and get the postfix name, or codepoint
 // You can also hover over the icon to see information about it, and a preview of the icon (as inline svg)
-assert_eq!(Symbols::, "fa-arrow_left");
+assert_eq!(categories::Fa::ArrowLeft.name(), "fa-arrow_left");
 let codepoint = Icon::FaArrowLeft as u32;
 
 //
