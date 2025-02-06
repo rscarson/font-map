@@ -7,7 +7,7 @@ pub fn to_categories(glyphs: &[Glyph]) -> HashMap<String, HashMap<String, Glyph>
     let mut categories = HashMap::new();
     for glyph in glyphs {
         let (category, name) = glyph.name().to_category();
-        let category = category.unwrap_or_else(|| "Uncategorized".to_string());
+        let category = category.unwrap_or_else(|| "Other".to_string());
 
         let identifier = uniquify(&name, |id| {
             categories

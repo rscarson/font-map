@@ -17,17 +17,35 @@ impl FontCategoryDesc {
     /// Create a new category from a name and a list of glyphs
     pub fn new(name: &str, glyphs: HashMap<String, Glyph>) -> Self {
         let identifier = Ident::new(name, Span::call_site());
+        let mut inst = Self {
+            identifier,
+            comments: Vec::with_capacity(1),
+            glyphs,
+        };
+
+        inst.update_comments();
+        inst
+    }
+
+    /// Update the comments of the category
+    pub fn update_comments(&mut self) {
         let comment = format!(
             "Contains the {} glyphs in the `{}` category",
-            glyphs.len(),
-            name.to_lowercase(),
+            self.glyphs.len(),
+            self.identifier.to_string().to_lowercase(),
         );
+        self.comments.drain(..);
+        self.comments.push(comment);
+    }
 
-        Self {
-            identifier,
-            comments: vec![comment],
-            glyphs,
-        }
+    /// Get the glyphs in this category
+    pub fn glyphs(&self) -> &HashMap<String, Glyph> {
+        &self.glyphs
+    }
+
+    /// Get the glyphs in this category mutably
+    pub fn glyphs_mut(&mut self) -> &mut HashMap<String, Glyph> {
+        &mut self.glyphs
     }
 
     /// Get the name of the category
@@ -49,6 +67,11 @@ impl FontCategoryDesc {
         self.comments = comments.into_iter().collect();
     }
 
+    /// Deconstructs the category into its inner glyphs
+    pub fn into_inner(self) -> HashMap<String, Glyph> {
+        self.glyphs
+    }
+
     /// Generates the code for this category
     ///
     /// Optionally, you can inject additional code into the generated category's impl
@@ -60,10 +83,13 @@ impl FontCategoryDesc {
         let injection = extra_impl.iter();
         let n_glyphs = self.glyphs.len();
 
+        let mut glyphs: Vec<_> = self.glyphs.iter().collect();
+        glyphs.sort_by(|a, b| a.1.name().cmp(b.1.name()));
+
         let codepoints = self.glyphs.values().map(Glyph::codepoint);
         let names = self.glyphs.values().map(Glyph::name);
 
-        let variants = self.glyphs.iter().map(|(name, glyph)| {
+        let variants = glyphs.iter().map(|(name, glyph)| {
             let identifier = Ident::new(name, Span::call_site());
             let name = glyph.name();
             let codepoint = glyph.codepoint();
@@ -76,7 +102,7 @@ impl FontCategoryDesc {
             #[cfg(feature = "extended-svg")]
             {
                 if let Ok(url) = glyph.svg_dataimage_url() {
-                    let link = format!("\n![Preview Glyph]({url})");
+                    let link = format!("\n\n![Preview Glyph]({url})");
                     comments.push(link);
                 }
             }
@@ -91,6 +117,7 @@ impl FontCategoryDesc {
         });
 
         quote! {
+            #[allow(clippy::unreadable_literal)]
             #[allow(rustdoc::bare_urls)]
             #( #[doc = #comments] )*
             #[derive(Debug, Clone, Copy)]
@@ -109,6 +136,7 @@ impl FontCategoryDesc {
                 /// Returns the postscript name of the glyph
                 #[allow(clippy::too_many_lines)]
                 #[allow(clippy::match_same_arms)]
+                #[allow(clippy::unreadable_literal)]
                 #[must_use]
                 pub fn name(&self) -> &'static str {
                     match *self as u32 {

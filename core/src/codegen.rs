@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::Ident;
@@ -43,6 +45,72 @@ impl FontDesc {
             let category = &mut categories[0];
             category.set_name(name);
             category.set_comments(comments.drain(..));
+        } else {
+            //
+            // Extract the 'Other' category if it exists
+            let other = categories.iter().position(|c| c.name() == "Other");
+            let other = other.map(|idx| categories.remove(idx));
+            let mut other =
+                other.unwrap_or_else(|| FontCategoryDesc::new("Other", HashMap::default()));
+
+            //
+            // Search for categories with < 3 glyphs and merge them with Uncategorized
+            let mut uncategorized = vec![];
+            let mut i = 0;
+            while i < categories.len() {
+                let category = &mut categories[i];
+                if category.glyphs().len() < 3 {
+                    let mut contents: Vec<_> = category.glyphs_mut().drain().collect();
+
+                    // Each name should be `category_name` + `glyph_name`
+                    for (name, _) in &mut contents {
+                        *name = format!("{}{name}", category.name());
+                    }
+
+                    uncategorized.extend(contents);
+                    categories.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+            if !uncategorized.is_empty() {
+                other.glyphs_mut().extend(uncategorized);
+            }
+
+            //
+            // Create an All category
+            let mut all = HashMap::with_capacity(glyphs.len());
+            for category in &categories {
+                let glyphs = category.glyphs().iter();
+                all.extend(glyphs.map(|(n, g)| {
+                    // If name starts with `_`, strip it
+                    let category = category.name();
+                    let name = n.strip_prefix('_').unwrap_or(n);
+
+                    let name = format!("{category}{name}");
+                    (name, g.clone())
+                }));
+            }
+            let glyphs = other.glyphs().iter();
+            all.extend(glyphs.map(|(n, g)| (n.clone(), g.clone())));
+
+            //
+            // Sort the categories by name
+            categories.sort_by(|a, b| a.name().cmp(b.name()));
+
+            //
+            // And update stuff
+            other.update_comments();
+            let mut all = FontCategoryDesc::new("All", all);
+            all.set_comments([format!(
+                "Contains the full set of {} glyphs in the font.  ",
+                all.glyphs().len()
+            )]);
+
+            //
+            // Add All, Other to the start
+            categories.insert(0, other);
+            categories.insert(0, all);
         }
 
         Self {

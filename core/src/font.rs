@@ -15,7 +15,10 @@ use crate::{
     raw::ttf::{GlyfOutline, SimpleGlyf, TrueTypeFont},
     svg::SvgExt,
 };
-use std::{borrow::Cow, collections::HashMap};
+use std::{
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+};
 
 /// A parsed font, with access to its glyphs and stored strings
 #[derive(Debug, Clone)]
@@ -86,17 +89,23 @@ impl From<TrueTypeFont> for Font {
         }
 
         let mut glyphs = Vec::new();
+        let mut codepoint_hash = HashSet::new();
         for (glyph_index, name) in post.glyph_names.into_iter().enumerate() {
             let name = Cow::Owned(name);
             let glyph_index = glyph_index as u16;
 
             // Find unicode codepoint, skipping unmapped glyphs
-            let codepoint = cmap.unicode_subtable.get_codepoint(glyph_index);
+            let codepoint = cmap.get_codepoint(glyph_index);
             let codepoint = match codepoint {
                 Some(c) if glyph_index == 0 => c,
                 Some(c) if c != 0xFFFF => c,
                 _ => continue,
             };
+
+            // Skip duplicate codepoints
+            if !codepoint_hash.insert(codepoint) {
+                continue;
+            }
 
             // Get the glyph outline data
             let outline = match glyf[glyph_index as usize] {

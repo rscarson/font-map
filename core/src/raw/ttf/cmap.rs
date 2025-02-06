@@ -7,12 +7,23 @@ use crate::reader::{BinaryReader, Parse};
 /// Contains only the subset of the table needed for mapping unicode codepoints to glyph indices
 #[derive(Debug, Default)]
 pub struct CmapTable {
-    /// The unicode subtable of the CMAP table
-    pub unicode_subtable: CmapSubtable,
+    /// Mapping from glyph indices to unicode codepoints
+    pub mappings: Vec<u32>,
+
+    /// Raw Subtables
+    pub tables: Vec<CmapSubtable>,
 }
 
 impl CmapTable {
-    const UNICODE_PLATFORM_ID: u16 = 0;
+    /// Returns the unicode codepoint for the given glyph index
+    #[must_use]
+    pub fn get_codepoint(&self, index: u16) -> Option<u32> {
+        if index as usize >= self.mappings.len() {
+            None
+        } else {
+            Some(self.mappings[index as usize])
+        }
+    }
 }
 
 impl Parse for CmapTable {
@@ -31,10 +42,17 @@ impl Parse for CmapTable {
             let encoding_id = reader.read_u16()?;
             let offset = reader.read_u32()?;
 
+            debug_msg!(
+                "  CMAP subtable: platform={}, encoding={}, offset={}",
+                platform_id,
+                encoding_id,
+                offset
+            );
+
             // Skip non-unicode subtables
-            if platform_id != Self::UNICODE_PLATFORM_ID {
-                continue;
-            }
+            //  if platform_id != Self::UNICODE_PLATFORM_ID {
+            //         continue;
+            //  }
 
             let mut subtable_reader = reader.clone();
             subtable_reader.advance_to(offset as usize)?;
@@ -42,8 +60,15 @@ impl Parse for CmapTable {
             subtable.platform = platform_id.into();
             subtable.encoding = encoding_id;
 
-            table.unicode_subtable = subtable;
-            break;
+            if table.mappings.len() < subtable.max_index as usize {
+                table
+                    .mappings
+                    .resize((subtable.max_index + 1) as usize, 0xFFFF);
+            }
+            for (idx, cde) in &subtable.mappings {
+                table.mappings[*idx as usize] = *cde;
+            }
+            table.tables.push(subtable);
         }
 
         Ok(table)
@@ -54,20 +79,14 @@ impl Parse for CmapTable {
 pub struct CmapSubtable {
     pub platform: PlatformType,
     pub encoding: u16,
-    pub mappings: Vec<u32>,
-}
-
-impl CmapSubtable {
-    pub fn get_codepoint(&self, glyph_index: u16) -> Option<u32> {
-        self.mappings.get(glyph_index as usize).copied()
-    }
+    pub mappings: Vec<(u16, u32)>,
+    pub max_index: u16,
 }
 
 impl Parse for CmapSubtable {
+    #[allow(clippy::too_many_lines)]
     fn parse(reader: &mut BinaryReader) -> ParseResult<Self> {
         let fmt = reader.read_u16()?;
-        reader.skip_u16()?; // length
-        reader.skip_u16()?; // language
 
         let mut subtable = Self::default();
         debug_msg!("  CMAP format: {}", fmt);
@@ -76,15 +95,22 @@ impl Parse for CmapSubtable {
             0 => {
                 //
                 // Format 0 CMAP tables are simple 1:1 mappings
+                reader.skip_u16()?; // length
+                reader.skip_u16()?; // language
+
+                subtable.max_index = 0xFF;
                 for codepoint in 0u32..=0xFF {
-                    let glyph_index = usize::from(reader.read_u8()?);
-                    subtable.mappings.insert(glyph_index, codepoint);
+                    let glyph_index = u16::from(reader.read_u8()?);
+                    subtable.mappings.push((glyph_index, codepoint));
                 }
             }
 
             4 => {
                 //
                 // Format 4 CMAP tables are segmented mappings
+                reader.skip_u16()?; // length
+                reader.skip_u16()?; // language
+
                 let mut seg_count = reader.read_u16()?;
                 seg_count /= 2;
 
@@ -114,7 +140,7 @@ impl Parse for CmapSubtable {
 
                     for codepoint in start_code[i]..=end_code[i] {
                         if codepoint == 0xFFFF {
-                            subtable.mappings[0] = u32::from(codepoint);
+                            subtable.mappings.push((0, 0xFFFF));
                             break;
                         }
 
@@ -141,15 +167,71 @@ impl Parse for CmapSubtable {
                             }
                         };
 
-                        if subtable.mappings.len() <= glyph_index as usize {
-                            subtable.mappings.resize(glyph_index as usize + 1, 0xFFFF);
-                        }
-                        subtable.mappings[glyph_index as usize] = u32::from(codepoint);
+                        subtable.mappings.push((glyph_index, u32::from(codepoint)));
+                        subtable.max_index = glyph_index;
                     }
                 }
             }
 
-            _ => todo!("Unsupported CMAP format: {}", fmt),
+            6 => {
+                reader.skip_u16()?; // len
+                reader.skip_u16()?; // lang
+
+                let first_code = reader.read_u16()?;
+                let entry_count = reader.read_u16()?;
+
+                debug_msg!(
+                    "  CMAP format 6: first_code={}, entry_count={}",
+                    first_code,
+                    entry_count
+                );
+
+                for i in 0..u32::from(entry_count) {
+                    let glyph_index = reader.read_u16()?;
+                    let codepoint = u32::from(first_code) + i;
+                    subtable.mappings.push((glyph_index, codepoint));
+                    subtable.max_index = subtable.max_index.max(glyph_index);
+                }
+            }
+
+            12 => {
+                //
+                // Format 12 CMAP tables are segmented mappings
+                reader.skip_u16()?; // reserved
+                reader.skip_u32()?; // len
+                reader.skip_u32()?; // lang
+                let num_groups = reader.read_u32()?;
+
+                debug_msg!("  CMAP format 12: num_groups={}", num_groups);
+
+                for _ in 0..num_groups {
+                    let start = reader.read_u32()?;
+                    let end = reader.read_u32()?;
+                    let start_glyph = reader.read_u32()?; // Glyph index corresponding to the starting character code
+
+                    debug_msg!(
+                        "  CMAP group: start={}, end={}, start_glyph={}",
+                        start,
+                        end,
+                        start_glyph
+                    );
+
+                    let adj = if start < end { 1 } else { -1 };
+
+                    let n = start.abs_diff(end);
+                    subtable.max_index = u16::try_from(start_glyph + n).unwrap_or_default();
+                    let mut codepoint = start;
+                    for i in 0..n {
+                        let index = u16::try_from(start_glyph + i).unwrap_or_default();
+
+                        subtable.mappings.push((index, codepoint));
+
+                        codepoint = codepoint.wrapping_add_signed(adj);
+                    }
+                }
+            }
+
+            _ => return Err(reader.err(&format!("Unsupported CMAP format: {fmt}"))),
         }
 
         debug_msg!("  Found {} mappings", subtable.mappings.len());
