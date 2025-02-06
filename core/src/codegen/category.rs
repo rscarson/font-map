@@ -1,30 +1,49 @@
-use proc_macro2::{Span, TokenStream};
-use quote::quote;
-use std::collections::BTreeMap;
-use std::str::FromStr;
-use syn::Ident;
+use proc_macro2::TokenStream;
+use quote::{format_ident, quote};
+use std::collections::HashMap;
 
+use super::GlyphDesc;
 use crate::font::Glyph;
 
 /// Describes a single category of glyphs in a font
 #[derive(Debug, Clone)]
 pub struct FontCategoryDesc {
-    identifier: Ident,
+    identifier: String,
     comments: Vec<String>,
-    glyphs: BTreeMap<String, Glyph>,
+    glyphs: Vec<GlyphDesc>,
 }
 impl FontCategoryDesc {
     /// Create a new category from a name and a list of glyphs
-    pub fn new(name: &str, glyphs: BTreeMap<String, Glyph>) -> Self {
-        let identifier = Ident::new(name, Span::call_site());
+    pub fn new(identifier: &str, glyphs: HashMap<String, Glyph>) -> Self {
+        let identifier = identifier.to_string();
+        let mut glyphs_: Vec<GlyphDesc> = Vec::with_capacity(glyphs.len());
+        for (name, glyph) in glyphs {
+            glyphs_.push(GlyphDesc::new(&name, &glyph));
+        }
+
         let mut inst = Self {
             identifier,
             comments: Vec::with_capacity(1),
-            glyphs,
+            glyphs: glyphs_,
         };
 
+        inst.sort();
         inst.update_comments();
         inst
+    }
+
+    /// Extend the category with additional glyphs
+    pub fn extend(&mut self, glyphs: impl IntoIterator<Item = GlyphDesc>) {
+        self.glyphs.extend(glyphs);
+    }
+
+    /// Insert a single glyph into the category
+    pub fn insert(&mut self, glyph: GlyphDesc) {
+        self.glyphs.push(glyph);
+    }
+
+    pub fn sort(&mut self) {
+        self.glyphs.sort();
     }
 
     /// Update the comments of the category
@@ -39,22 +58,22 @@ impl FontCategoryDesc {
     }
 
     /// Get the glyphs in this category
-    pub fn glyphs(&self) -> &BTreeMap<String, Glyph> {
+    pub fn glyphs(&self) -> &Vec<GlyphDesc> {
         &self.glyphs
     }
 
     /// Get the glyphs in this category mutably
-    pub fn glyphs_mut(&mut self) -> &mut BTreeMap<String, Glyph> {
+    pub fn glyphs_mut(&mut self) -> &mut Vec<GlyphDesc> {
         &mut self.glyphs
     }
 
     /// Get the name of the category
-    pub fn name(&self) -> &Ident {
+    pub fn name(&self) -> &str {
         &self.identifier
     }
 
-    pub fn set_name(&mut self, name: &str) {
-        self.identifier = Ident::new(name, Span::call_site());
+    pub fn set_name(&mut self, name: String) {
+        self.identifier = name;
     }
 
     /// Get the comments of this category
@@ -68,8 +87,8 @@ impl FontCategoryDesc {
     }
 
     /// Deconstructs the category into its inner glyphs
-    pub fn into_inner(self) -> BTreeMap<String, Glyph> {
-        self.glyphs
+    pub fn into_inner(self) -> (String, Vec<GlyphDesc>) {
+        (self.identifier, self.glyphs)
     }
 
     /// Generates the code for this category
@@ -78,40 +97,14 @@ impl FontCategoryDesc {
     #[allow(unused_mut)]
     #[allow(clippy::needless_pass_by_value)]
     pub fn codegen(&self, extra_impl: Option<TokenStream>) -> TokenStream {
-        let identifier = &self.identifier;
+        let identifier = format_ident!("{}", &self.identifier);
         let comments = &self.comments;
         let injection = extra_impl.iter();
         let n_glyphs = self.glyphs.len();
 
-        let codepoints = self.glyphs.values().map(Glyph::codepoint);
-        let names = self.glyphs.values().map(Glyph::name);
-
-        let variants = self.glyphs.iter().map(|(name, glyph)| {
-            let identifier = Ident::new(name, Span::call_site());
-            let name = glyph.name();
-            let codepoint = glyph.codepoint();
-
-            let mut comments = vec![
-                format!("`{name} (U+{codepoint:04X})`  "),
-                format!("Unicode range: {}", glyph.unicode_range()),
-            ];
-
-            #[cfg(feature = "extended-svg")]
-            {
-                if let Ok(url) = glyph.svg_dataimage_url() {
-                    let link = format!("\n\n![Preview Glyph]({url})");
-                    comments.push(link);
-                }
-            }
-
-            let codepoint = format!("{codepoint:#x}");
-            let codepoint = TokenStream::from_str(&codepoint).unwrap();
-
-            quote! {
-                #( #[doc = #comments] )*
-                #identifier = #codepoint,
-            }
-        });
+        let codepoints = self.glyphs.iter().map(GlyphDesc::codepoint);
+        let names = self.glyphs.iter().map(GlyphDesc::name);
+        let variants = self.glyphs.iter().map(GlyphDesc::codegen);
 
         quote! {
             #[allow(clippy::unreadable_literal)]

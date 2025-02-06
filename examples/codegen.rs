@@ -11,9 +11,6 @@ fn main() -> ParseResult<()> {
     //
     // We can optionally inject extra code into the generated enum's impl block
     let code_tokens = generator.codegen(None);
-    println!(
-        "Length of generated code: {}",
-        code_tokens.to_string().len()
-    );
+    println!("Generated some code: {}", !code_tokens.is_empty());
     Ok(())
 }

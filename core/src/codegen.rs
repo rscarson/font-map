@@ -1,8 +1,7 @@
 //! Code generation utilities for fonts
-use std::collections::BTreeMap;
-
-use proc_macro2::{Span, TokenStream};
-use syn::Ident;
+use proc_macro2::TokenStream;
+use quote::format_ident;
+use std::{collections::HashMap, vec};
 
 use crate::font::{Font, StringKind};
 
@@ -10,10 +9,13 @@ mod docstring;
 use docstring::DocstringExt;
 
 mod to_ident;
-use to_ident::{to_categories, to_identifiers};
+use to_ident::{to_categories, to_identifiers, ToIdentExt};
 
 mod category;
 use category::FontCategoryDesc;
+
+mod glyph;
+pub use glyph::GlyphDesc;
 
 #[cfg(feature = "codegen")]
 #[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
@@ -22,93 +24,114 @@ pub use quote::quote;
 /// Describes a font used for code generation
 #[derive(Debug, Clone)]
 pub struct FontDesc {
-    identifier: Ident,
+    identifier: String,
     family: Option<String>,
     comments: Vec<String>,
     categories: Vec<FontCategoryDesc>,
 }
 impl FontDesc {
     /// Describe the font from a `Font` instance, optionally skipping categories
-    pub fn from_font(name: &str, font: &Font, skip_categories: bool) -> Self {
-        let identifier = Ident::new(name, Span::call_site());
+    pub fn from_font(identifier: &str, font: &Font, skip_categories: bool) -> Self {
+        let identifier = identifier.to_string();
         let family = font.string(StringKind::FontFamily).map(ToString::to_string);
         let mut comments = font.gen_docblock();
 
-        let glyphs = font.glyphs();
+        //
+        // Get initial categories
         let mut categories = if skip_categories {
-            let glyphs = to_identifiers(glyphs);
-            vec![FontCategoryDesc::new(name, glyphs)]
+            // If set, skip categorization all-together
+            let glyphs = to_identifiers(font.glyphs());
+            vec![FontCategoryDesc::new(&identifier, glyphs)]
         } else {
-            to_categories(glyphs)
-                .into_iter()
-                .map(|(name, glyphs)| FontCategoryDesc::new(&name, glyphs))
-                .collect()
+            // Otherwise, attempt a best-effort categorization
+            let raw_categories = to_categories(font.glyphs());
+            let mut categories = Vec::with_capacity(raw_categories.len());
+            for (name, glyphs) in raw_categories {
+                categories.push(FontCategoryDesc::new(&name, glyphs));
+            }
+
+            categories
         };
 
+        //
+        // If we have just one, fall-back to single-cat generation
         if categories.len() == 1 {
             let category = &mut categories[0];
-            category.set_name(name);
+            category.set_name(identifier.clone());
             category.set_comments(comments.drain(..));
-        } else {
-            //
-            // Extract the 'Other' category if it exists
-            let other = categories.iter().position(|c| c.name() == "Other");
-            let other = other.map(|idx| categories.remove(idx));
-            let mut other =
-                other.unwrap_or_else(|| FontCategoryDesc::new("Other", BTreeMap::default()));
 
-            //
-            // Search for categories with < 3 glyphs and merge them with Uncategorized
-            let mut i = 0;
-            while i < categories.len() {
-                if categories.len() > 2 {
-                    i += 1;
-                    continue;
-                }
-
-                let category = categories.remove(i);
-                let category_name = category.name().to_string();
-                for (mut name, glyph) in category.into_inner() {
-                    name = format!("{category_name}{name}");
-                    other.glyphs_mut().insert(name, glyph);
-                }
-            }
-
-            //
-            // Create an All category
-            let mut all = BTreeMap::new();
-            for category in &categories {
-                let glyphs = category.glyphs().iter();
-                all.extend(glyphs.map(|(n, g)| {
-                    // If name starts with `_`, strip it
-                    let category = category.name();
-                    let name = n.strip_prefix('_').unwrap_or(n);
-
-                    let name = format!("{category}{name}");
-                    (name, g.clone())
-                }));
-            }
-            let glyphs = other.glyphs().iter();
-            all.extend(glyphs.map(|(n, g)| (n.clone(), g.clone())));
-
-            //
-            // Sort the categories by name
-            categories.sort_by(|a, b| a.name().cmp(b.name()));
-
-            //
-            // And update stuff
-            other.update_comments();
-            let mut all = FontCategoryDesc::new("All", all);
-            all.set_comments([format!(
-                "Contains the full set of {} glyphs in the font.  ",
-                all.glyphs().len()
-            )]);
-
-            //
-            // Add All, Other to the start
-            categories.insert(0, other);
-            categories.insert(0, all);
+            return Self {
+                identifier,
+                family,
+                comments,
+                categories,
+            };
         }
+
+        //
+        // Extract (or create) the `Other` category
+        let mut other = categories
+            .iter()
+            .position(|c| c.name() == "Other")
+            .map_or_else(
+                || FontCategoryDesc::new("Other", HashMap::default()),
+                |idx| categories.swap_remove(idx),
+            );
+
+        //
+        // Extract all categories with < 3 glyphs and merge them with `Other`
+        categories = categories
+            .drain(..)
+            .filter_map(|category| {
+                if category.glyphs().len() > 2 {
+                    return Some(category);
+                }
+
+                let (name, glyphs) = category.into_inner();
+                for mut glyph in glyphs {
+                    let identifier = name.merge_identifiers(glyph.identifier());
+                    glyph.set_identifier(identifier);
+                    other.insert(glyph);
+                }
+                None
+            })
+            .collect();
+
+        //
+        // Create an All category, populated with every glyph
+        let mut all = FontCategoryDesc::new("All", HashMap::default());
+        all.extend(other.glyphs().iter().cloned());
+        for category in &categories {
+            let glyphs = category.glyphs().iter();
+            all.extend(glyphs.map(|glyph| {
+                let mut glyph = glyph.clone();
+                let identifier = category.name().merge_identifiers(glyph.identifier());
+                glyph.set_identifier(identifier);
+                glyph
+            }));
+        }
+
+        //
+        // Sort the modified glyph cats
+        all.sort();
+        other.sort();
+
+        //
+        // Sort the categories by name
+        categories.sort_by(|a, b| a.name().cmp(b.name()));
+
+        //
+        // And update stuff
+        other.update_comments();
+        all.set_comments([format!(
+            "Contains the full set of {} glyphs in the font.  ",
+            all.glyphs().len()
+        )]);
+
+        //
+        // Add All, Other to the start
+        categories.insert(0, other);
+        categories.insert(0, all);
 
         Self {
             identifier,
@@ -128,8 +151,9 @@ impl FontDesc {
     ///
     /// Optionally, you can inject additional code into the generated font's impl
     #[allow(clippy::needless_pass_by_value)]
+    #[must_use]
     pub fn codegen(&self, extra_impl: Option<TokenStream>) -> TokenStream {
-        let identifier = &self.identifier;
+        let identifier = format_ident!("{}", &self.identifier);
         let outer_comments = &self.comments;
         let font_family = self.family.iter();
         let injection = extra_impl.iter();
@@ -146,19 +170,24 @@ impl FontDesc {
         } else {
             //
             // Categories in a module, generate an outer wrapper enum
-            let categories: Vec<TokenStream> = self.categories.iter().map(Into::into).collect();
+            let mut categories = Vec::with_capacity(self.categories.len());
+            for category in &self.categories {
+                categories.push(category.codegen(None));
+            }
 
-            let variant_names: Vec<_> =
-                self.categories.iter().map(FontCategoryDesc::name).collect();
-
-            let variants = self.categories.iter().map(|cat| {
-                let name = cat.name();
-                let comments = cat.comments();
-                quote! {
+            let mut variant_names = Vec::with_capacity(categories.len());
+            let mut variants = Vec::with_capacity(categories.len());
+            for category in &self.categories {
+                let name = format_ident!("{}", category.name());
+                let comments = category.comments();
+                let variant = quote! {
                     #( #[doc = #comments] )*
                     #name(categories :: #name),
-                }
-            });
+                };
+
+                variant_names.push(name);
+                variants.push(variant);
+            }
 
             quote! {
                 /// Contains a set of enums for each of the sub-categories in this font

@@ -163,7 +163,7 @@ impl Glyph {
 
     /// Returns the unicode range for the glyph
     #[must_use]
-    pub fn unicode_range(&self) -> &str {
+    pub fn unicode_range(&self) -> &'static str {
         crate::unicode_range::unicode_range(self.codepoint)
     }
 

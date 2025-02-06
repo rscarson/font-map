@@ -1,9 +1,9 @@
 use crate::font::Glyph;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 /// Maps a set of glyphs to categories with identifiers
-pub fn to_categories(glyphs: &[Glyph]) -> BTreeMap<String, BTreeMap<String, Glyph>> {
-    let mut categories = BTreeMap::new();
+pub fn to_categories(glyphs: &[Glyph]) -> HashMap<String, HashMap<String, Glyph>> {
+    let mut categories = HashMap::new();
     for glyph in glyphs {
         let (category, name) = glyph.name().to_category();
         let category = category.unwrap_or_else(|| "Other".to_string());
@@ -11,10 +11,10 @@ pub fn to_categories(glyphs: &[Glyph]) -> BTreeMap<String, BTreeMap<String, Glyp
         let identifier = uniquify(&name, |id| {
             categories
                 .get(&category)
-                .map_or(true, |c: &BTreeMap<String, Glyph>| !c.contains_key(id))
+                .map_or(true, |c: &HashMap<String, Glyph>| !c.contains_key(id))
         });
 
-        let category = categories.entry(category).or_insert_with(BTreeMap::new);
+        let category = categories.entry(category).or_insert_with(HashMap::new);
         category.insert(identifier, glyph.clone());
     }
 
@@ -22,8 +22,8 @@ pub fn to_categories(glyphs: &[Glyph]) -> BTreeMap<String, BTreeMap<String, Glyp
 }
 
 /// Maps a set of glyphs to identifiers, checking for duplicates
-pub fn to_identifiers(glyphs: &[Glyph]) -> BTreeMap<String, Glyph> {
-    let mut identifiers = BTreeMap::new();
+pub fn to_identifiers(glyphs: &[Glyph]) -> HashMap<String, Glyph> {
+    let mut identifiers = HashMap::new();
     for glyph in glyphs {
         let mut identifier = glyph.name().to_identifier();
 
@@ -74,6 +74,9 @@ pub trait ToIdentExt {
 
     /// Returns the prefix and the rest of the font string
     fn to_category(&self) -> (Option<String>, String);
+
+    /// Merges two identifiers into a single identifier
+    fn merge_identifiers(&self, other: &str) -> String;
 }
 impl ToIdentExt for str {
     fn to_category(&self) -> (Option<String>, String) {
@@ -141,6 +144,11 @@ impl ToIdentExt for str {
         }
 
         identifier
+    }
+
+    fn merge_identifiers(&self, other: &str) -> String {
+        let other = other.strip_prefix('_').unwrap_or(other);
+        format!("{self}{other}")
     }
 }
 
