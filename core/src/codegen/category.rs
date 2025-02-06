@@ -1,6 +1,6 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use syn::Ident;
 
@@ -11,11 +11,11 @@ use crate::font::Glyph;
 pub struct FontCategoryDesc {
     identifier: Ident,
     comments: Vec<String>,
-    glyphs: HashMap<String, Glyph>,
+    glyphs: BTreeMap<String, Glyph>,
 }
 impl FontCategoryDesc {
     /// Create a new category from a name and a list of glyphs
-    pub fn new(name: &str, glyphs: HashMap<String, Glyph>) -> Self {
+    pub fn new(name: &str, glyphs: BTreeMap<String, Glyph>) -> Self {
         let identifier = Ident::new(name, Span::call_site());
         let mut inst = Self {
             identifier,
@@ -39,12 +39,12 @@ impl FontCategoryDesc {
     }
 
     /// Get the glyphs in this category
-    pub fn glyphs(&self) -> &HashMap<String, Glyph> {
+    pub fn glyphs(&self) -> &BTreeMap<String, Glyph> {
         &self.glyphs
     }
 
     /// Get the glyphs in this category mutably
-    pub fn glyphs_mut(&mut self) -> &mut HashMap<String, Glyph> {
+    pub fn glyphs_mut(&mut self) -> &mut BTreeMap<String, Glyph> {
         &mut self.glyphs
     }
 
@@ -68,7 +68,7 @@ impl FontCategoryDesc {
     }
 
     /// Deconstructs the category into its inner glyphs
-    pub fn into_inner(self) -> HashMap<String, Glyph> {
+    pub fn into_inner(self) -> BTreeMap<String, Glyph> {
         self.glyphs
     }
 
@@ -83,13 +83,10 @@ impl FontCategoryDesc {
         let injection = extra_impl.iter();
         let n_glyphs = self.glyphs.len();
 
-        let mut glyphs: Vec<_> = self.glyphs.iter().collect();
-        glyphs.sort_by(|a, b| a.1.name().cmp(b.1.name()));
-
         let codepoints = self.glyphs.values().map(Glyph::codepoint);
         let names = self.glyphs.values().map(Glyph::name);
 
-        let variants = glyphs.iter().map(|(name, glyph)| {
+        let variants = self.glyphs.iter().map(|(name, glyph)| {
             let identifier = Ident::new(name, Span::call_site());
             let name = glyph.name();
             let codepoint = glyph.codepoint();

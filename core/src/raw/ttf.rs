@@ -9,7 +9,7 @@ mod post;
 pub use post::PostTable;
 
 mod cmap;
-pub use cmap::CmapTable;
+pub use cmap::*;
 
 mod glyf;
 pub use glyf::*;

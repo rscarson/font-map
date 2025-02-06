@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+//! Code generation utilities for fonts
+use std::collections::BTreeMap;
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
 use syn::Ident;
 
 use crate::font::{Font, StringKind};
@@ -14,6 +14,10 @@ use to_ident::{to_categories, to_identifiers};
 
 mod category;
 use category::FontCategoryDesc;
+
+#[cfg(feature = "codegen")]
+#[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
+pub use quote::quote;
 
 /// Describes a font used for code generation
 #[derive(Debug, Clone)]
@@ -51,35 +55,28 @@ impl FontDesc {
             let other = categories.iter().position(|c| c.name() == "Other");
             let other = other.map(|idx| categories.remove(idx));
             let mut other =
-                other.unwrap_or_else(|| FontCategoryDesc::new("Other", HashMap::default()));
+                other.unwrap_or_else(|| FontCategoryDesc::new("Other", BTreeMap::default()));
 
             //
             // Search for categories with < 3 glyphs and merge them with Uncategorized
-            let mut uncategorized = vec![];
             let mut i = 0;
             while i < categories.len() {
-                let category = &mut categories[i];
-                if category.glyphs().len() < 3 {
-                    let mut contents: Vec<_> = category.glyphs_mut().drain().collect();
-
-                    // Each name should be `category_name` + `glyph_name`
-                    for (name, _) in &mut contents {
-                        *name = format!("{}{name}", category.name());
-                    }
-
-                    uncategorized.extend(contents);
-                    categories.remove(i);
-                } else {
+                if categories.len() > 2 {
                     i += 1;
+                    continue;
                 }
-            }
-            if !uncategorized.is_empty() {
-                other.glyphs_mut().extend(uncategorized);
+
+                let category = categories.remove(i);
+                let category_name = category.name().to_string();
+                for (mut name, glyph) in category.into_inner() {
+                    name = format!("{category_name}{name}");
+                    other.glyphs_mut().insert(name, glyph);
+                }
             }
 
             //
             // Create an All category
-            let mut all = HashMap::with_capacity(glyphs.len());
+            let mut all = BTreeMap::new();
             for category in &categories {
                 let glyphs = category.glyphs().iter();
                 all.extend(glyphs.map(|(n, g)| {

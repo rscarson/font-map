@@ -49,24 +49,18 @@ impl Parse for CmapTable {
                 offset
             );
 
-            // Skip non-unicode subtables
-            //  if platform_id != Self::UNICODE_PLATFORM_ID {
-            //         continue;
-            //  }
-
             let mut subtable_reader = reader.clone();
             subtable_reader.advance_to(offset as usize)?;
             let mut subtable = CmapSubtable::parse(&mut subtable_reader)?;
             subtable.platform = platform_id.into();
             subtable.encoding = encoding_id;
 
-            if table.mappings.len() < subtable.max_index as usize {
-                table
-                    .mappings
-                    .resize((subtable.max_index + 1) as usize, 0xFFFF);
-            }
             for (idx, cde) in &subtable.mappings {
-                table.mappings[*idx as usize] = *cde;
+                let idx = *idx as usize;
+                if table.mappings.len() <= idx {
+                    table.mappings.resize(idx + 1, 0xFFFF);
+                }
+                table.mappings[idx] = *cde;
             }
             table.tables.push(subtable);
         }
@@ -75,12 +69,17 @@ impl Parse for CmapTable {
     }
 }
 
+/// An individual CMAP subtable
 #[derive(Debug, Default)]
 pub struct CmapSubtable {
+    /// Platform ID
     pub platform: PlatformType,
+
+    /// Encoding type
     pub encoding: u16,
+
+    /// Mappings from glyph indices to unicode codepoints
     pub mappings: Vec<(u16, u32)>,
-    pub max_index: u16,
 }
 
 impl Parse for CmapSubtable {
@@ -98,7 +97,6 @@ impl Parse for CmapSubtable {
                 reader.skip_u16()?; // length
                 reader.skip_u16()?; // language
 
-                subtable.max_index = 0xFF;
                 for codepoint in 0u32..=0xFF {
                     let glyph_index = u16::from(reader.read_u8()?);
                     subtable.mappings.push((glyph_index, codepoint));
@@ -168,7 +166,6 @@ impl Parse for CmapSubtable {
                         };
 
                         subtable.mappings.push((glyph_index, u32::from(codepoint)));
-                        subtable.max_index = glyph_index;
                     }
                 }
             }
@@ -190,7 +187,6 @@ impl Parse for CmapSubtable {
                     let glyph_index = reader.read_u16()?;
                     let codepoint = u32::from(first_code) + i;
                     subtable.mappings.push((glyph_index, codepoint));
-                    subtable.max_index = subtable.max_index.max(glyph_index);
                 }
             }
 
@@ -219,13 +215,10 @@ impl Parse for CmapSubtable {
                     let adj = if start < end { 1 } else { -1 };
 
                     let n = start.abs_diff(end);
-                    subtable.max_index = u16::try_from(start_glyph + n).unwrap_or_default();
                     let mut codepoint = start;
                     for i in 0..n {
                         let index = u16::try_from(start_glyph + i).unwrap_or_default();
-
                         subtable.mappings.push((index, codepoint));
-
                         codepoint = codepoint.wrapping_add_signed(adj);
                     }
                 }

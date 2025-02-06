@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use font_map_core::{font::Font, FontDesc};
+use font_map_core::{codegen::FontDesc, font::Font};
 
 const FONT_BYTES: &[u8] = include_bytes!("font.ttf");
 

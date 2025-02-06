@@ -17,21 +17,13 @@ mod reader;
 
 #[cfg(feature = "codegen")]
 #[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
-mod codegen;
+pub mod codegen;
 
 mod svg;
 mod unicode_range;
 
 pub mod error;
 pub mod font;
-
-#[cfg(feature = "codegen")]
-#[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
-pub use quote::quote;
-
-#[cfg(feature = "codegen")]
-#[cfg_attr(docsrs, doc(cfg(feature = "codegen")))]
-pub use codegen::*;
 
 /// This module contains the raw data structures from parsing font files
 pub mod raw {

@@ -5,7 +5,7 @@ use font_map::error::ParseResult;
 use font_map::font::{Font, StringKind};
 
 fn main() -> ParseResult<()> {
-    let font = Font::from_file("nerd_font/font.ttf")?;
+    let font = Font::from_file("google_material_symbols/font.ttf")?;
     let font_name = font.string(StringKind::FullFontName).unwrap();
     println!(
         "Font `{font_name}` contains {} glyphs: ",
