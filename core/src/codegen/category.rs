@@ -27,7 +27,6 @@ impl FontCategoryDesc {
             glyphs: glyphs_,
         };
 
-        inst.sort();
         inst.update_comments();
         inst
     }

@@ -59,6 +59,7 @@ impl FontDesc {
             let category = &mut categories[0];
             category.set_name(identifier.clone());
             category.set_comments(comments.drain(..));
+            category.sort();
 
             return Self {
                 identifier,
@@ -98,40 +99,14 @@ impl FontDesc {
             .collect();
 
         //
-        // Create an All category, populated with every glyph
-        let mut all = FontCategoryDesc::new("All", HashMap::default());
-        all.extend(other.glyphs().iter().cloned());
-        for category in &categories {
-            let glyphs = category.glyphs().iter();
-            all.extend(glyphs.map(|glyph| {
-                let mut glyph = glyph.clone();
-                let identifier = category.name().merge_identifiers(glyph.identifier());
-                glyph.set_identifier(identifier);
-                glyph
-            }));
-        }
-
-        //
-        // Sort the modified glyph cats
-        all.sort();
-        other.sort();
+        // Update/Add Other
+        other.update_comments();
+        categories.push(other);
 
         //
         // Sort the categories by name
         categories.sort_by(|a, b| a.name().cmp(b.name()));
-
-        //
-        // And update stuff
-        other.update_comments();
-        all.set_comments([format!(
-            "Contains the full set of {} glyphs in the font.  ",
-            all.glyphs().len()
-        )]);
-
-        //
-        // Add All, Other to the start
-        categories.insert(0, other);
-        categories.insert(0, all);
+        categories.iter_mut().for_each(FontCategoryDesc::sort);
 
         Self {
             identifier,
