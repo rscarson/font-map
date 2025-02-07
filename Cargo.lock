@@ -1126,7 +1126,7 @@ dependencies = [
 
 [[package]]
 name = "font-map"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "criterion",
  "font-map-core",
@@ -1135,7 +1135,7 @@ dependencies = [
 
 [[package]]
 name = "font-map-core"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "base64",
  "encoding_rs",
@@ -1149,7 +1149,7 @@ dependencies = [
 
 [[package]]
 name = "font-map-macros"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "font-map-core",
  "syn 2.0.96",
@@ -1400,10 +1400,9 @@ dependencies = [
 
 [[package]]
 name = "google_material_symbols"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "font-map",
- "font-map-core",
  "iced",
 ]
 
@@ -2040,10 +2039,9 @@ dependencies = [
 
 [[package]]
 name = "nerd_font"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "font-map",
- "font-map-core",
  "iced",
 ]
 

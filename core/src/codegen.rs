@@ -126,6 +126,7 @@ impl FontDesc {
     ///
     /// Optionally, you can inject additional code into the generated font's impl
     #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn codegen(&self, extra_impl: Option<TokenStream>) -> TokenStream {
         let identifier = format_ident!("{}", &self.identifier);
@@ -140,6 +141,10 @@ impl FontDesc {
                 #(
                     /// The family name for font
                     pub const FONT_FAMILY: &str = #font_family;
+                )*
+
+                #(
+                    #injection
                 )*
             }))
         } else {

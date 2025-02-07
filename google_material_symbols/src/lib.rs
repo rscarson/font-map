@@ -8,47 +8,53 @@
 //! This crate provides an enum of all the glyphs in the Google Material Symbols font.  
 //! Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 //!
+//! In addition - you can hover over the icons in your IDE to see a preview of the icon!
+//!
 //! See <https://fonts.google.com/icons> for more information
 //!
 //! **I am not affiliated with Google Inc., nor do I have any rights to the Google Material Symbols font.**  
 //! This crate is published with a copy of the font, and its license, as allowed by the license.
 //!
-//! See [`Icon`] for the list of available icons, including their names, codepoints and a preview image.  
-//! See [`Icon::FONT_FAMILY`] for the functions and constants available on the enum (So you don't need to scroll past 3,589 icons to find it!)
+//! See [`GoogleMaterialSymbols`] for the list of available icons, including their names, codepoints and a preview image.  
+//! See [`GoogleMaterialSymbols::FONT_FAMILY`] for the functions and constants available on the enum (So you don't need to scroll past 3,589 icons to find it!)
 //!
-//! ## Example
+//! -----
+//!
+//! The individual glyphs are in the `GoogleMaterialSymbols` enum:
 //!
 //! ```rust
-//! use google_material_symbols::{Icon, load_font};
-//!
-//! //
-//! // You can access the icon by name, and get the postfix name, or codepoint
-//! // You can also hover over the icon to see information about it, and a preview of the icon (as inline svg)
-//! assert_eq!(Icon::Delete.name(), "delete");
-//! let codepoint = Icon::Delete as u32;
-//!
-//! //
-//! // You can also search for glyphs, and extract data about the font
-//! let font = load_font();
-//! let icon = font.glyph_named("delete").unwrap();
-//! let svg = icon.svg_preview(); // The same as the inline svg in the hover
+//! use google_material_symbols::GoogleMaterialSymbols;
+//! let _ = GoogleMaterialSymbols::MagicButton;
 //! ```
 //!
-//! If you use iced there are some QOL features built-in:
+//! -----
+//!
+//! Each glyph contains the following information:
+//! - Unicode codepoint: e.g. `GoogleMaterialSymbols::MagicButton as u32`
+//! - Postfix name: e.g. `GoogleMaterialSymbols::MagicButton.name()`
+//! - Glyph preview image, visible in the documentation, and by hovering over the glyphs in your IDE!
+//!
+//! You can also get the actual char from the enum, with `char::from(GoogleMaterialSymbols::MagicButton)`, or `GoogleMaterialSymbols::MagicButton.to_string()`
+//!
+//! -----
+//!
+//! If you use `iced` there are some QOL features built-in:  
+//! **NOTE: ** you will need to activate the `iced` crate-level feature to use these!
+//!
+//! - [`FONT_BYTES`] is the raw bytes of the font, for loading into iced
+//! - [`IcedExt`] provides the helper functions for using the font in iced
+//! - Glyphs also implement `Into<iced::Element>`, which will use the default font size
 //!
 //! ```ignore
-//! `google_material_symbols::FONT_BYTES` is the raw bytes of the font, for loading into iced
-//! // You need to activate the `iced` feature to use these features
-//! let text_widget = Icon::Delete.into_text(24); // A text widget with the icon, in the font, size 24
-//! let widget: iced::Element<_> = Icon::Delete.into(); // A text widget with the icon, in the default font size
+//! use google_material_symbols::{IcedExt, categories::Dev};
 //!
+//! // A text widget configured to use the icon font, with the selected glyph, and a font size of 24
+//! let text_widget = Dev::Android.into_text(24);
 //! ```
 //!
-//! ## Features
+//! You will additionally need to load the font, by calling `.font(google_material_symbols::FONT_BYTES)` on your `iced::Application`.
 //!
-//! #### `svg-preview`
-//! Default: On  
-//! Provides a preview of the icon in the hover documentation, as an inline SVG.
+//! ## Crate Features
 //!
 //! #### `iced`
 //! Default: Off  
@@ -61,47 +67,58 @@
 /// Re-export of the `font_map` crate, which provides a simple API for analyzing font files
 pub use font_map;
 
-//
-// Generated font bindings
-include!(env!("FONT_ENUM"));
+font_map::include_font!(GoogleMaterialSymbols);
 
-/// The contents of the Google Material Icons font file
-pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
+/// Extension trait for using these icons from within iced
+///
+/// - [`FONT_BYTES`] is the raw bytes of the font, for loading into iced
+/// - `GoogleMaterialSymbols` also implements `Into<iced::Element>`, which will use the default font size
+///
+/// ```rust
+/// use google_material_symbols::{IcedExt, GoogleMaterialSymbols};
+///
+/// // A text widget configured to use the icon font, with the selected glyph, and a font size of 24
+/// let text_widget = GoogleMaterialSymbols.into_text(24);
+/// ```
+///
+/// You will additionally need to load the font, by calling `.font(google_material_symbols::FONT_BYTES)` on your `iced::Application`.
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+pub trait IcedExt {
+    /// Returns a font definition for this font  
+    /// Used for the `font` method on iced text widgets
+    #[must_use]
+    fn iced_font() -> iced::Font;
 
-/// Load the Google Material Icons font, returning a `font_map::Font` instance
-#[allow(
-    clippy::missing_panics_doc,
-    reason = "The panic message is clear enough"
-)]
-#[must_use]
-pub fn load_font() -> font_map::font::Font {
-    font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
+    /// Converts this enum into an iced Text widget  
+    /// Sets the font-size of the new widget
+    #[must_use]
+    fn into_text<'a, Theme>(
+        self,
+        font_size: impl Into<iced::Pixels>,
+    ) -> iced::widget::Text<'a, Theme>
+    where
+        Theme: iced::widget::text::Catalog;
 }
 
-impl Icon {
-    /// Returns a font definition for this font
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-    #[must_use]
-    pub fn iced_font() -> iced::Font {
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+impl<S: Into<GoogleMaterialSymbols>> IcedExt for S {
+    fn iced_font() -> iced::Font {
         iced::font::Font {
-            family: iced::font::Family::Name(Icon::FONT_FAMILY),
+            family: iced::font::Family::Name(GoogleMaterialSymbols::FONT_FAMILY),
             ..Default::default()
         }
     }
 
-    /// Converts this enum into an iced Text widget
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-    #[must_use]
-    pub fn into_text<'a, Theme>(
+    fn into_text<'a, Theme>(
         self,
         font_size: impl Into<iced::Pixels>,
     ) -> iced::widget::Text<'a, Theme>
     where
         Theme: iced::widget::text::Catalog,
     {
-        iced::widget::Text::new(char::from(self))
+        iced::widget::Text::new(char::from(Into::<GoogleMaterialSymbols>::into(self)))
             .font(Self::iced_font())
             .size(font_size)
     }
@@ -109,9 +126,23 @@ impl Icon {
 
 #[cfg(feature = "iced")]
 #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-impl<'a, Message> From<Icon> for iced::Element<'a, Message> {
-    fn from(value: Icon) -> Self {
+impl<'a, Message> From<GoogleMaterialSymbols> for iced::Element<'a, Message> {
+    fn from(value: GoogleMaterialSymbols) -> Self {
         let font_size = iced::settings::Settings::default().default_text_size;
         value.into_text(font_size).into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[allow(clippy::const_is_empty)]
+    fn test() {
+        let font = load_font();
+        assert!(!font.glyphs().is_empty());
+        assert!(!GoogleMaterialSymbols::FONT_BYTES.is_empty());
+        let _ = GoogleMaterialSymbols::MagicButton;
     }
 }

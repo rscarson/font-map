@@ -8,46 +8,59 @@
 //! This crate provides an enum of all the glyphs in the `JetbrainsMono Nerd Font`.  
 //! Additionally, it provides a way to load the font, and QOL features for using the font in iced.
 //!
+//! In addition - you can hover over the icons in your IDE to see a preview of the icon!
+//!
 //! See <https://www.nerdfonts.com/> for more information
 //!
 //! **I am not affiliated with Nerd Fonts, nor do I have any rights to the `JetbrainsMono Nerd Font`.**  
 //! This crate is published with a copy of the font, and its license, as allowed by the license.
 //!
-//! See [`Symbols`] or [`categories`] for the list of available icons, including their names, codepoints and a preview image.  
+//! See [`NerdFont`] or [`categories`] for the list of available icons, including their names, codepoints and a preview image.  
 //!
-//! ## Example
+//! -----
 //!
+//! The individual glyphs are in seperate enums inside of the [`categories`] module:
 //! ```rust
-//! use nerd_font::{Icon, load_font};
+//! use nerd_font::categories;
 //!
-//! //
-//! // You can access the icon by name, and get the postfix name, or codepoint
-//! // You can also hover over the icon to see information about it, and a preview of the icon (as inline svg)
-//! assert_eq!(categories::Fa::ArrowLeft.name(), "fa-arrow_left");
-//! let codepoint = Icon::FaArrowLeft as u32;
-//!
-//! //
-//! // You can also search for glyphs, and extract data about the font
-//! let font = load_font();
-//! let icon = font.glyph_named("fa-arrow_left").unwrap();
-//! let svg = icon.svg_preview(); // The same as the inline svg in the hover
+//! let _ = categories::Dev::Android;
+//! let _ = categories::Fa::ArrowLeft;
 //! ```
 //!
-//! If you use iced there are some QOL features built-in:
+//! There is also an enum encapsulating all the glyphs, [`NerdFont`], which can be converted to and from the individual enums:
+//! ```rust
+//! use nerd_font::{NerdFont, categories::Dev};
+//! let _: NerdFont = Dev::Android.into();
+//! ```
+//!
+//! -----
+//!
+//! Each glyph contains the following information:
+//! - Unicode codepoint: e.g. `Dev::Android as u32`
+//! - Postfix name: e.g. `Dev::Android.name()`
+//! - Glyph preview image, visible in the documentation, and by hovering over the glyphs in your IDE!
+//!
+//! You can also get the actual char from the enum, with `char::from(Dev::Android)`, or `Dev::Android.to_string()`
+//!
+//! -----
+//!
+//! If you use `iced` there are some QOL features built-in:  
+//! **NOTE: ** you will need to activate the `iced` crate-level feature to use these!
+//!
+//! - [`NerdFont::FONT_BYTES`] is the raw bytes of the font, for loading into iced
+//! - [`IcedExt`] provides the helper functions for using the font in iced
+//! - `NerdFont` also implements `Into<iced::Element>`, which will use the default font size
 //!
 //! ```ignore
-//! // `nerd_font::FONT_BYTES` is the raw bytes of the font, for loading into iced
-//! // You need to activate the `iced` feature to use these features
-//! let text_widget = Symbols::dev::Android.into_text(24); // A text widget with the icon, in the font, size 24
-//! let widget = Symbols::dev::Android.into_element(); // A text widget with the icon, in the default font size
+//! use nerd_font::{IcedExt, categories::Dev};
 //!
+//! // A text widget configured to use the icon font, with the selected glyph, and a font size of 24
+//! let text_widget = Dev::Android.into_text(24);
 //! ```
 //!
-//! ## Features
+//! You will additionally need to load the font, by calling `.font(NerdFont::FONT_BYTES)` on your `iced::Application`.
 //!
-//! #### `svg-preview`
-//! Default: On  
-//! Provides a preview of the icon in the hover documentation, as an inline SVG.
+//! ## Crate Features
 //!
 //! #### `iced`
 //! Default: Off  
@@ -60,47 +73,58 @@
 /// Re-export of the `font_map` crate, which provides a simple API for analyzing font files
 pub use font_map;
 
-//
-// Generated font bindings
-include!(env!("FONT_GEN"));
+font_map::include_font!(NerdFont);
 
-/// The contents of the Font file
-pub const FONT_BYTES: &[u8] = include_bytes!("../font.ttf");
+/// Extension trait for using these icons from within iced
+///
+/// - [`NerdFont::FONT_BYTES`] is the raw bytes of the font, for loading into iced
+/// - `NerdFont` also implements `Into<iced::Element>`, which will use the default font size
+///
+/// ```rust
+/// use nerd_font::{IcedExt, categories::Dev};
+///
+/// // A text widget configured to use the icon font, with the selected glyph, and a font size of 24
+/// let text_widget = Dev::Android.into_text(24);
+/// ```
+///
+/// You will additionally need to load the font, by calling `.font(NerdFont::FONT_BYTES)` on your `iced::Application`.
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+pub trait IcedExt {
+    /// Returns a font definition for this font  
+    /// Used for the `font` method on iced text widgets
+    #[must_use]
+    fn iced_font() -> iced::Font;
 
-/// Load the Nerd Font symbols, returning a `font_map::Font` instance
-#[allow(
-    clippy::missing_panics_doc,
-    reason = "The panic message is clear enough"
-)]
-#[must_use]
-pub fn load_font() -> font_map::font::Font {
-    font_map::font::Font::new(FONT_BYTES).expect("Bundled font was invalid!")
+    /// Converts this enum into an iced Text widget  
+    /// Sets the font-size of the new widget
+    #[must_use]
+    fn into_text<'a, Theme>(
+        self,
+        font_size: impl Into<iced::Pixels>,
+    ) -> iced::widget::Text<'a, Theme>
+    where
+        Theme: iced::widget::text::Catalog;
 }
 
-impl Symbols {
-    /// Returns a font definition for this font
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-    #[must_use]
-    pub fn iced_font() -> iced::Font {
+#[cfg(feature = "iced")]
+#[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
+impl<S: Into<NerdFont>> IcedExt for S {
+    fn iced_font() -> iced::Font {
         iced::font::Font {
-            family: iced::font::Family::Name(Symbols::FONT_FAMILY),
+            family: iced::font::Family::Name(NerdFont::FONT_FAMILY),
             ..Default::default()
         }
     }
 
-    /// Converts this enum into an iced Text widget
-    #[cfg(feature = "iced")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-    #[must_use]
-    pub fn into_text<'a, Theme>(
+    fn into_text<'a, Theme>(
         self,
         font_size: impl Into<iced::Pixels>,
     ) -> iced::widget::Text<'a, Theme>
     where
         Theme: iced::widget::text::Catalog,
     {
-        iced::widget::Text::new(char::from(self))
+        iced::widget::Text::new(char::from(Into::<NerdFont>::into(self)))
             .font(Self::iced_font())
             .size(font_size)
     }
@@ -108,9 +132,23 @@ impl Symbols {
 
 #[cfg(feature = "iced")]
 #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-impl<'a, Message> From<Symbols> for iced::Element<'a, Message> {
-    fn from(value: Symbols) -> Self {
+impl<'a, Message> From<NerdFont> for iced::Element<'a, Message> {
+    fn from(value: NerdFont) -> Self {
         let font_size = iced::settings::Settings::default().default_text_size;
         value.into_text(font_size).into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[allow(clippy::const_is_empty)]
+    fn test() {
+        let font = load_font();
+        assert!(!font.glyphs().is_empty());
+        assert!(!NerdFont::FONT_BYTES.is_empty());
+        let _ = categories::Dev::Ansible;
     }
 }
