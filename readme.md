@@ -12,6 +12,7 @@ This crate provides functionality for parsing font files and enumerating the gly
 
 The base usecase for this crate is to create an enum of all the glyphs in a font file,  
 for use in fontend projects, where you want to refer to glyphs by name rather than by codepoint:
+
 ```rust
 use font_map::font;
 
@@ -29,6 +30,7 @@ You can also access `Icon::FONT_FAMILY` to simplify font usage in your frontend.
 -----
 
 Another use is to use it for introspection of font files:
+
 ```rust
 use font_map::font::Font;
 
@@ -48,7 +50,7 @@ if let Some(glyph) = font.glyph_named("delete") {
 This crate was made for a very specific use-case, and as such currently has a few limitations:
 - Only supports TTF fonts
 - And even then, only a subset of the spec, namely:
-- Only formats 0 and 4 of the `cmap` table
+- Only some formats of the `cmap` table
 - Only Unicode, or MS encoding 1 and 10, and `Macintosh::0` of the `name` table
 - Only formats 2.5 or below of the `post` table
 
