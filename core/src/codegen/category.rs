@@ -110,13 +110,11 @@ impl FontCategoryDesc {
             #[allow(rustdoc::bare_urls)]
             #( #[doc = #comments] )*
             #[derive(Debug, Clone, Copy)]
-            #[rustfmt::skip]
             #[repr(u32)]
             pub enum #identifier {
                 #( #variants )*
             }
 
-            #[rustfmt::skip]
             #[allow(dead_code)]
             impl #identifier {
                 /// The total number of glyphs in this enum

@@ -126,6 +126,13 @@ macro_rules! build_font {
         std::fs::write(&target, code).expect("Failed to write generated icon-enum");
 
         //
+        // Manually run rustfmt on the generated file
+        let _ = std::process::Command::new("rustfmt")
+            .arg(&target)
+            .status()
+            .expect("Failed to run rustfmt on generated icon-enum");
+
+        //
         // Provide an ENV var with the path to the generated file
         println!(
             concat!("cargo:rustc-env=FONT_GEN_", stringify!($name), "={}"),
