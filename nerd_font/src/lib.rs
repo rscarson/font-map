@@ -133,9 +133,9 @@ impl<S: Into<NerdFont>> IcedExt for S {
 
 #[cfg(feature = "iced")]
 #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-impl<'a, Message> From<NerdFont> for iced::Element<'a, Message> {
+impl<Message> From<NerdFont> for iced::Element<'_, Message> {
     fn from(value: NerdFont) -> Self {
-        let font_size = iced::settings::Settings::default().default_text_size;
+        let font_size = iced::Settings::default().default_text_size;
         value.into_text(font_size).into()
     }
 }

@@ -127,9 +127,9 @@ impl<S: Into<GoogleMaterialSymbols>> IcedExt for S {
 
 #[cfg(feature = "iced")]
 #[cfg_attr(docsrs, doc(cfg(feature = "iced")))]
-impl<'a, Message> From<GoogleMaterialSymbols> for iced::Element<'a, Message> {
+impl<Message> From<GoogleMaterialSymbols> for iced::Element<'_, Message> {
     fn from(value: GoogleMaterialSymbols) -> Self {
-        let font_size = iced::settings::Settings::default().default_text_size;
+        let font_size = iced::Settings::default().default_text_size;
         value.into_text(font_size).into()
     }
 }
