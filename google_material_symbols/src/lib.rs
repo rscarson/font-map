@@ -62,6 +62,7 @@
 //!
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::doc_comment_double_space_linebreaks)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// Re-export of the `font_map` crate, which provides a simple API for analyzing font files

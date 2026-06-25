@@ -7,7 +7,7 @@
 //! - Postscript name
 //! - Outline data
 //!
-#![allow(clippy::match_on_vec_items)]
+#![allow(clippy::indexing_slicing)]
 #![allow(clippy::cast_possible_truncation)]
 pub use crate::raw::ttf::NameKind as StringKind;
 use crate::{

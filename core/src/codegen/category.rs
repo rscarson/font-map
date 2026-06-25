@@ -50,7 +50,7 @@ impl FontCategoryDesc {
         let comment = format!(
             "Contains the {} glyphs in the `{}` category",
             self.glyphs.len(),
-            self.identifier.to_string().to_lowercase(),
+            self.identifier.clone().to_lowercase(),
         );
         self.comments.drain(..);
         self.comments.push(comment);

@@ -11,7 +11,7 @@ pub fn to_categories(glyphs: &[Glyph]) -> HashMap<String, HashMap<String, Glyph>
         let identifier = uniquify(&name, |id| {
             categories
                 .get(&category)
-                .map_or(true, |c: &HashMap<String, Glyph>| !c.contains_key(id))
+                .is_none_or(|c: &HashMap<String, Glyph>| !c.contains_key(id))
         });
 
         let category = categories.entry(category).or_insert_with(HashMap::new);

@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
+#![allow(clippy::doc_comment_double_space_linebreaks)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// Utility macro for printing debug messages if the `debug-parser` feature is enabled

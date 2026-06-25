@@ -92,7 +92,7 @@ impl PartialSvgExt for Contour {
                     // 2 control points in a row. Calculate a virtual on-curve point midway between them
                     let (x1, y1) = (control_point.x, -control_point.y);
                     let (x2, y2) = (
-                        (control_point.x + curve_pt.x) / 2,
+                        i16::midpoint(control_point.x, curve_pt.x),
                         -(control_point.y + curve_pt.y) / 2,
                     );
                     path.push(SvgPathComponent::QuadraticBezier(x1, y1, x2, y2));

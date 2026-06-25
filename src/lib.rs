@@ -58,6 +58,7 @@
 //!
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::doc_comment_double_space_linebreaks)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub use font_map_core::*;
 
